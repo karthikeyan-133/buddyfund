@@ -1,0 +1,7 @@
+{
+  "name": "BuddyFund",
+  "description": "Private group savings, transparent expense management, tour budget planning, and internal community lending for groups of friends.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
