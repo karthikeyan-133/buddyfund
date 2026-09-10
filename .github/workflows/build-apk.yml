@@ -1,0 +1,88 @@
+name: Build BuddyFund Android APK
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: 📱 Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Install Node Dependencies
+        run: npm install
+
+      - name: 🛠️ Build Web App (Vite)
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://tlrzxjhnypxyrjkbiigl.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRscnp4amhueXB4eXJqa2JpaWdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NDcyODksImV4cCI6MjEwNDQyMzI4OX0.aULdGkqIkO8f_18MNkwWN9b9x_dRh32etB2_GWp06gM' }}
+        run: npm run build:client
+
+      - name: ☕ Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 🔄 Sync Capacitor Android
+        run: npx cap sync android
+
+      - name: 🔑 Grant Execute Permission to gradlew
+        run: chmod +x android/gradlew
+
+      - name: 🔨 Compile Android Debug APK
+        run: |
+          cd android
+          ./gradlew assembleDebug --no-daemon
+
+      - name: 📋 Rename APK to BuddyFund.apk
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/BuddyFund.apk
+
+      - name: 🚀 Upload APK Artifact (Direct Download)
+        uses: actions/upload-artifact@v4
+        with:
+          name: BuddyFund-Android-App
+          path: android/app/build/outputs/apk/debug/BuddyFund.apk
+          retention-days: 30
+
+      - name: 🏷️ Release APK (Automatic Nightly / Latest Release)
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: v1.0.0
+          name: "BuddyFund Mobile App v1.0.0"
+          body: |
+            ### 📱 BuddyFund Android Mobile App (.apk)
+            
+            Download the latest Android installation package below:
+            - **File**: `BuddyFund.apk`
+            - **Compatibility**: Android 8.0 (Oreo) and above
+            - **Features**: Group savings circles, tour planning, instant ledger sync, voice & receipt uploads, and real-time expense management.
+            
+            #### How to Install:
+            1. Download `BuddyFund.apk` to your Android device.
+            2. Tap the downloaded file to install (allow "Install from Unknown Sources" if prompted by your browser).
+            3. Open BuddyFund and sign in / select your circle!
+          files: |
+            android/app/build/outputs/apk/debug/BuddyFund.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

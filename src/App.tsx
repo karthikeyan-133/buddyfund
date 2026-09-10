@@ -28,6 +28,7 @@ import { RequestLoanModal } from './components/modals/RequestLoanModal';
 import { AddMemberModal } from './components/modals/AddMemberModal';
 import { TourProposalModal } from './components/modals/TourProposalModal';
 import { AuthModal } from './components/modals/AuthModal';
+import { MobileAppModal } from './components/modals/MobileAppModal';
 import { AuthPage } from './components/auth/AuthPage';
 
 // Initial Clean Data
@@ -254,6 +255,7 @@ export default function App() {
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [isTourProposalOpen, setIsTourProposalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isMobileAppModalOpen, setIsMobileAppModalOpen] = useState(false);
   const [selectedMemberForPayment, setSelectedMemberForPayment] = useState<string | undefined>(undefined);
 
   // Toast feedback
@@ -2314,6 +2316,7 @@ export default function App() {
           userRole={currentUser.role}
           unreadCount={notifications.filter((n) => !n.isRead).length}
           onOpenCreateCircle={() => setIsCreateCircleOpen(true)}
+          onOpenMobileAppModal={() => setIsMobileAppModalOpen(true)}
         />
 
         {/* Main Content Stage */}
@@ -2575,6 +2578,26 @@ export default function App() {
                 </button>
               )}
             </div>
+
+            {/* Mobile App Download Card */}
+            <div className="pt-2 border-t border-slate-100">
+              <button
+                onClick={() => {
+                  setShowMobileMoreMenu(false);
+                  setIsMobileAppModalOpen(true);
+                }}
+                className="w-full py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl font-bold flex items-center justify-between shadow-md active:scale-98 transition"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">📱</span>
+                  <div className="text-left">
+                    <div className="text-xs font-bold leading-tight">Get BuddyFund Mobile App</div>
+                    <div className="text-[10px] text-emerald-100 font-normal leading-tight">Android APK &bull; Add to Home Screen</div>
+                  </div>
+                </div>
+                <span className="text-[11px] bg-white/20 px-2 py-0.5 rounded-lg font-semibold">Install</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -2648,6 +2671,11 @@ export default function App() {
         onClose={() => setIsAuthModalOpen(false)}
         allUsers={users}
         onLoginAsUser={handleSwitchUser}
+      />
+
+      <MobileAppModal
+        isOpen={isMobileAppModalOpen}
+        onClose={() => setIsMobileAppModalOpen(false)}
       />
     </div>
   );

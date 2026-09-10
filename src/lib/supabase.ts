@@ -22,6 +22,9 @@ export const SUPABASE_URL =
   (import.meta as any).env?.VITE_SUPABASE_URL ||
   'https://tlrzxjhnypxyrjkbiigl.supabase.co';
 
+const DEFAULT_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRscnp4amhueXB4eXJqa2JpaWdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NDcyODksImV4cCI6MjEwNDQyMzI4OX0.aULdGkqIkO8f_18MNkwWN9b9x_dRh32etB2_GWp06gM';
+
 // Helper to get anon key from env or localStorage
 export function getAnonKey(): string {
   const envKey =
@@ -36,7 +39,7 @@ export function getAnonKey(): string {
   } catch {
     // Ignore localStorage errors
   }
-  return '';
+  return DEFAULT_ANON_KEY;
 }
 
 export function saveAnonKey(key: string): void {

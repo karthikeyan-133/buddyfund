@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">BuddyFund</string>
+    <string name="title_activity_main">BuddyFund</string>
+    <string name="package_name">com.buddyfund.app</string>
+    <string name="custom_url_scheme">com.buddyfund.app</string>
+</resources>

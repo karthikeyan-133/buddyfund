@@ -14,6 +14,8 @@ import {
   ShieldCheck,
   UserCheck,
   PlusCircle,
+  Smartphone,
+  Download,
 } from 'lucide-react';
 import { Role } from '../types';
 
@@ -23,6 +25,7 @@ interface SidebarProps {
   userRole: Role;
   unreadCount: number;
   onOpenCreateCircle?: () => void;
+  onOpenMobileAppModal?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -109,7 +112,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       )}
 
-      <div className="mt-auto pt-4 border-t border-slate-200">
+      <div className="mt-auto pt-4 border-t border-slate-200 space-y-3">
+        {/* Mobile App Download Card */}
+        <div className="bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-cyan-500/10 border border-emerald-500/20 rounded-2xl p-3 shadow-2xs">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1.5 text-emerald-800">
+              <Smartphone className="w-4 h-4 text-emerald-600" />
+              <span className="text-xs font-bold font-cute">Mobile App</span>
+            </div>
+            <span className="text-[9px] uppercase px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
+              APK &bull; PWA
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-500 leading-snug">
+            Download Android APK or add to home screen.
+          </p>
+          <div className="mt-2.5 flex gap-1.5">
+            <button
+              onClick={onOpenMobileAppModal}
+              className="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 shadow-xs transition active:scale-95"
+            >
+              <Download className="w-3 h-3" />
+              <span>Get APK</span>
+            </button>
+            <a
+              href="https://github.com/karthikeyan-133/buddyfund/releases"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="py-1.5 px-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-[11px] font-medium flex items-center justify-center transition"
+              title="GitHub Releases"
+            >
+              v1.0
+            </a>
+          </div>
+        </div>
+
         <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
