@@ -34,6 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   userRole,
   unreadCount,
   onOpenCreateCircle,
+  onOpenMobileAppModal,
 }) => {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
