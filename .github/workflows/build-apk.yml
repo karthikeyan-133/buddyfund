@@ -36,11 +36,11 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRscnp4amhueXB4eXJqa2JpaWdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NDcyODksImV4cCI6MjEwNDQyMzI4OX0.aULdGkqIkO8f_18MNkwWN9b9x_dRh32etB2_GWp06gM' }}
         run: npm run build:client
 
-      - name: ☕ Setup Java 17
+      - name: ☕ Setup Java 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       - name: 🔄 Sync Capacitor Android
         run: npx cap sync android
