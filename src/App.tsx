@@ -29,6 +29,7 @@ import { AddMemberModal } from './components/modals/AddMemberModal';
 import { TourProposalModal } from './components/modals/TourProposalModal';
 import { AuthModal } from './components/modals/AuthModal';
 import { MobileAppModal } from './components/modals/MobileAppModal';
+import { MemberPaySavingsModal } from './components/modals/MemberPaySavingsModal';
 import { AuthPage } from './components/auth/AuthPage';
 
 // Initial Clean Data
@@ -256,6 +257,7 @@ export default function App() {
   const [isTourProposalOpen, setIsTourProposalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isMobileAppModalOpen, setIsMobileAppModalOpen] = useState(false);
+  const [isMemberPayOpen, setIsMemberPayOpen] = useState(false);
   const [selectedMemberForPayment, setSelectedMemberForPayment] = useState<string | undefined>(undefined);
 
   // Toast feedback
@@ -381,6 +383,38 @@ export default function App() {
 
   // Upcoming Tour
   const upcomingTour = circleTours[0] || null;
+
+  // Active Pending Savings Due for current user (used for Dashboard Pay button)
+  const myPendingDueRecord = React.useMemo(() => {
+    if (!currentUser || !currentCircle) return null;
+    const myIds = [currentUser.id, (currentUser as any)?.userId].filter(Boolean);
+    const existing = circleContributions.find(
+      (c) => myIds.includes(c.userId) && c.status !== 'Paid'
+    );
+    if (existing) return existing;
+
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const targetDayIndex = days.indexOf(currentCircle.contributionDay || 'Sunday');
+    const now = new Date();
+    const currentDayIndex = now.getDay();
+    let diff = (targetDayIndex - currentDayIndex + 7) % 7;
+    const targetDate = new Date(now);
+    targetDate.setDate(now.getDate() + diff);
+    const dateStr = targetDate.toISOString().split('T')[0];
+
+    return {
+      id: `sched-${currentCircle.id}-${currentUser.id}-${dateStr}`,
+      circleId: currentCircle.id,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      weekNumber: 1,
+      weekLabel: 'Weekly Savings Due',
+      dueDate: dateStr,
+      amount: currentCircle.contributionAmount || 500,
+      paidAmount: 0,
+      status: 'Pending' as const,
+    };
+  }, [currentUser, currentCircle, circleContributions]);
 
   // Supabase & Cloud Database Sync
   useEffect(() => {
@@ -2646,7 +2680,11 @@ export default function App() {
                   expenseChartData={expenseChartData}
                   onNavigateTab={handleNavigateTab}
                   onOpenRecordPaymentModal={() => {
-                    if (currentUser.role !== 'member') setIsRecordPaymentOpen(true);
+                    if (currentUser.role !== 'member') {
+                      setIsRecordPaymentOpen(true);
+                    } else {
+                      setIsMemberPayOpen(true);
+                    }
                   }}
                   onOpenAddExpenseModal={() => {
                     if (currentUser.role !== 'member') setIsAddExpenseOpen(true);
@@ -2965,6 +3003,21 @@ export default function App() {
         isOpen={isMobileAppModalOpen}
         onClose={() => setIsMobileAppModalOpen(false)}
       />
+
+      {isMemberPayOpen && currentCircle && myPendingDueRecord && (
+        <MemberPaySavingsModal
+          isOpen={isMemberPayOpen}
+          onClose={() => setIsMemberPayOpen(false)}
+          circle={currentCircle}
+          record={myPendingDueRecord}
+          currentUser={currentUser}
+          adminMember={circleMembers.find((m) => m.role === 'circle_admin')}
+          onSubmitPayment={(data) => {
+            handleMemberSubmitSavingsPayment(data);
+            setIsMemberPayOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }

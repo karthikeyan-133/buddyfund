@@ -106,32 +106,30 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
 
         {/* Quick Actions */}
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-          {isAdmin && (
-            <>
-              {/* Pay Button - Glossy Emerald Pill */}
-              <button
-                id="dash-record-payment-btn"
-                onClick={onOpenRecordPaymentModal}
-                className="group relative flex-1 sm:flex-initial min-h-[44px] px-4 py-2.5 bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600 hover:from-emerald-300 hover:to-emerald-500 text-slate-950 font-extrabold rounded-2xl text-xs sm:text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_6px_20px_-4px_rgba(16,185,129,0.45)] hover:shadow-[0_8px_24px_-4px_rgba(16,185,129,0.6)] hover:-translate-y-0.5 active:translate-y-0 active:scale-95 border-t border-emerald-200/60"
-              >
-                <span className="w-6 h-6 rounded-xl bg-slate-950/15 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                  <PlusCircle className="w-4 h-4 text-slate-950 stroke-[2.5]" />
-                </span>
-                <span className="tracking-tight">Pay</span>
-              </button>
+          {/* Pay Button - Accessible to Both Admin & Members */}
+          <button
+            id="dash-record-payment-btn"
+            onClick={onOpenRecordPaymentModal}
+            className="group relative flex-1 sm:flex-initial min-h-[44px] px-4 py-2.5 bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600 hover:from-emerald-300 hover:to-emerald-500 text-slate-950 font-extrabold rounded-2xl text-xs sm:text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_6px_20px_-4px_rgba(16,185,129,0.45)] hover:shadow-[0_8px_24px_-4px_rgba(16,185,129,0.6)] hover:-translate-y-0.5 active:translate-y-0 active:scale-95 border-t border-emerald-200/60"
+          >
+            <span className="w-6 h-6 rounded-xl bg-slate-950/15 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+              <PlusCircle className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+            </span>
+            <span className="tracking-tight">Pay</span>
+          </button>
 
-              {/* Expense Button - Frosted Rose Glass Pill */}
-              <button
-                id="dash-add-expense-btn"
-                onClick={onOpenAddExpenseModal}
-                className="group relative flex-1 sm:flex-initial min-h-[44px] px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-2xl text-xs sm:text-sm transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-md border border-white/15 hover:border-white/30 shadow-[0_4px_16px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.25)] hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
-              >
-                <span className="w-6 h-6 rounded-xl bg-rose-500/25 border border-rose-400/30 flex items-center justify-center text-rose-300 group-hover:scale-110 group-hover:bg-rose-500/35 transition-all duration-200">
-                  <Receipt className="w-3.5 h-3.5 stroke-[2.2]" />
-                </span>
-                <span className="tracking-tight">Expense</span>
-              </button>
-            </>
+          {isAdmin && (
+            /* Expense Button - Frosted Rose Glass Pill */
+            <button
+              id="dash-add-expense-btn"
+              onClick={onOpenAddExpenseModal}
+              className="group relative flex-1 sm:flex-initial min-h-[44px] px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-2xl text-xs sm:text-sm transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-md border border-white/15 hover:border-white/30 shadow-[0_4px_16px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.25)] hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
+            >
+              <span className="w-6 h-6 rounded-xl bg-rose-500/25 border border-rose-400/30 flex items-center justify-center text-rose-300 group-hover:scale-110 group-hover:bg-rose-500/35 transition-all duration-200">
+                <Receipt className="w-3.5 h-3.5 stroke-[2.2]" />
+              </span>
+              <span className="tracking-tight">Expense</span>
+            </button>
           )}
 
           {/* Request Loan Button - Frosted Amber Glass Pill */}
