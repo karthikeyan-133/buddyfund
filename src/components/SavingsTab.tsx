@@ -314,20 +314,8 @@ export const SavingsTab: React.FC<SavingsTabProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Member Quick Pay Button if has pending due */}
-          {!isAdmin && myPendingRecord && myPendingRecord.status === 'Pending' && (
-            <button
-              id="member-header-pay-btn"
-              onClick={() => setMemberPayRecord(myPendingRecord)}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold rounded-xl transition flex items-center gap-1.5 shadow-md shadow-emerald-600/20 active:scale-95"
-            >
-              <CreditCard className="w-4 h-4" />
-              Pay {currency}{myPendingRecord.amount} Weekly Savings
-            </button>
-          )}
-
-          {isAdmin && (
+        {isAdmin && (
+          <div className="flex items-center gap-2">
             <button
               id="savings-record-modal-btn"
               onClick={onOpenRecordModal}
@@ -336,8 +324,8 @@ export const SavingsTab: React.FC<SavingsTabProps> = ({
               <Plus className="w-4 h-4" />
               Record Payment
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* ADMIN ONLY: Pending Payment Confirmations Verification Banner */}
