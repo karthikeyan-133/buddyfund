@@ -796,7 +796,9 @@ export default function App() {
                     !cur ||
                     cur.status !== latest.status ||
                     cur.paidAmount !== latest.paidAmount ||
-                    cur.dueDate !== latest.dueDate
+                    cur.dueDate !== latest.dueDate ||
+                    cur.referenceNote !== latest.referenceNote ||
+                    cur.paymentMethod !== latest.paymentMethod
                   );
                 });
               if (isDifferent) {
@@ -1161,6 +1163,289 @@ export default function App() {
     );
 
     showToast(`Payment of ₹${data.amount} recorded for ${memberName}`);
+  };
+
+  // Actions: Member Submits Weekly Savings Payment for Admin Verification
+  const handleMemberSubmitSavingsPayment = (data: {
+    recordId: string;
+    userId: string;
+    amount: number;
+    paymentMethod: 'UPI' | 'Cash' | 'Bank Transfer';
+    referenceNote: string;
+    date: string;
+  }) => {
+    if (!currentUser) return;
+
+    const member =
+      members.find((m) => m.userId === data.userId || m.id === data.userId) ||
+      users.find((u) => u.id === data.userId);
+    const memberName = member?.name || currentUser.name || 'Member';
+    const dateStr = data.date || new Date().toISOString().split('T')[0];
+    const formattedDate = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+
+    const targetId =
+      data.recordId && !data.recordId.startsWith('sched-')
+        ? data.recordId
+        : `contrib-${currentCircle.id}-${data.userId}-${dateStr.replace(/-/g, '')}`;
+
+    const existing = contributions.find((c) => c.id === targetId || c.id === data.recordId);
+
+    const recordToSave: ContributionRecord = {
+      id: targetId,
+      circleId: currentCircle.id,
+      userId: data.userId,
+      userName: memberName,
+      weekNumber: existing?.weekNumber || 1,
+      weekLabel: existing?.weekLabel || formattedDate,
+      dueDate: existing?.dueDate || dateStr,
+      amount: data.amount,
+      paidAmount: 0, // Crucial: Fund balance does NOT update until Circle Admin explicitly confirms!
+      status: 'Pending Confirmation',
+      paidDate: dateStr,
+      paymentMethod: data.paymentMethod,
+      referenceNote: data.referenceNote,
+      submittedAt: new Date().toISOString(),
+      recordedBy: `${currentUser.name} (Claimed)`,
+    };
+
+    // Update state & storage
+    setContributions((prev) => {
+      const filtered = prev.filter(
+        (c) =>
+          c.id !== recordToSave.id &&
+          !(
+            c.circleId === currentCircle.id &&
+            c.userId === data.userId &&
+            c.dueDate === recordToSave.dueDate
+          )
+      );
+      const next = [recordToSave, ...filtered];
+      saveLocalState('contributions', next);
+      return next;
+    });
+
+    dbUpsertContribution(recordToSave);
+    broadcastContributionUpdate(currentCircle.id, recordToSave);
+
+    // Notify Circle Admin
+    const adminMembers = circleMembers.filter((m) => m.role === 'circle_admin');
+    const adminNotification: AppNotification = {
+      id: `notif-claim-${Date.now()}`,
+      circleId: currentCircle.id,
+      userId: adminMembers[0]?.userId || 'admin',
+      title: 'Savings Payment Confirmation Request',
+      message: `${memberName} submitted ₹${data.amount} via ${data.paymentMethod} (${data.referenceNote}). Please confirm if payment is received.`,
+      type: 'payment_received',
+      date: new Date().toISOString(),
+      isRead: false,
+      linkToTab: 'savings',
+    };
+    setNotifications((prev) => [adminNotification, ...prev]);
+
+    // Audit Log
+    const newAudit: AuditLog = {
+      id: `audit-${Date.now()}`,
+      circleId: currentCircle.id,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      action: 'Payment Submitted by Member',
+      timestamp: new Date().toISOString(),
+      oldValue: 'Status: Pending',
+      newValue: `Status: Pending Confirmation (₹${data.amount} via ${data.paymentMethod} by ${memberName})`,
+      ipInfo: '103.14.88.2 (Palakkad, IN)',
+    };
+    setAuditLogs((prev) => [newAudit, ...prev]);
+
+    showToast(`Payment of ₹${data.amount} submitted! Awaiting Circle Admin confirmation.`);
+  };
+
+  // Actions: Circle Admin Confirms Savings Payment ("Payment Received / Get")
+  const handleAdminConfirmSavingsPayment = (record: ContributionRecord) => {
+    if (!currentUser) return;
+    if (currentUser.role === 'member') {
+      showToast('Permission denied: Only Circle Admins can confirm payments.');
+      return;
+    }
+
+    const member =
+      members.find((m) => m.userId === record.userId || m.id === record.userId) ||
+      users.find((u) => u.id === record.userId);
+    const memberName = member?.name || record.userName || 'Member';
+    const dateStr = record.dueDate || new Date().toISOString().split('T')[0];
+    const formattedDate = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+
+    const confirmedRecord: ContributionRecord = {
+      ...record,
+      userName: memberName,
+      paidAmount: record.amount,
+      status: 'Paid',
+      paidDate: new Date().toISOString().split('T')[0],
+      recordedBy: currentUser.name,
+      adminDecisionDate: new Date().toISOString(),
+    };
+
+    // 1. Update Contribution Record
+    setContributions((prev) => {
+      const filtered = prev.filter(
+        (c) =>
+          c.id !== confirmedRecord.id &&
+          !(
+            c.circleId === currentCircle.id &&
+            c.userId === record.userId &&
+            c.dueDate === record.dueDate
+          )
+      );
+      const next = [confirmedRecord, ...filtered];
+      saveLocalState('contributions', next);
+      return next;
+    });
+
+    dbUpsertContribution(confirmedRecord);
+    broadcastContributionUpdate(currentCircle.id, confirmedRecord);
+
+    // 2. Double-entry Transaction Ledger (Now and ONLY now does the circle fund update!)
+    const txRef = `SAV-${currentCircle.id.slice(-4)}-${record.userId.slice(-6)}-${dateStr.replace(/-/g, '')}`;
+    const newTx: Transaction = {
+      id: `tx-${currentCircle.id.slice(-4)}-${record.userId.slice(-6)}-${dateStr.replace(/-/g, '')}`,
+      circleId: currentCircle.id,
+      memberId: record.userId,
+      memberName: memberName,
+      amount: record.amount,
+      type: 'CONTRIBUTION',
+      category: 'Savings Contribution',
+      date: new Date().toISOString(),
+      reference: txRef,
+      createdBy: currentUser.name,
+      notes: `Savings contribution (${formattedDate}) confirmed via ${record.paymentMethod || 'UPI'} • ${record.referenceNote || 'Verified by Admin'}`,
+      auditInfo: `Confirmed by Circle Admin ${currentUser.name}`,
+    };
+
+    setTransactions((prev) => {
+      const exists = prev.some((t) => t.reference === txRef || t.id === newTx.id);
+      if (exists) {
+        const next = prev.map((t) => (t.reference === txRef || t.id === newTx.id ? newTx : t));
+        saveLocalState('transactions', next);
+        return next;
+      }
+      dbInsertTransaction(newTx);
+      const next = [newTx, ...prev];
+      saveLocalState('transactions', next);
+      return next;
+    });
+
+    // 3. Update member's stats
+    setMembers((prev) =>
+      prev.map((m) =>
+        (m.userId === record.userId || m.id === record.userId) && m.circleId === currentCircle.id
+          ? {
+              ...m,
+              totalContributed: m.totalContributed + record.amount,
+              pendingContribution: Math.max(0, m.pendingContribution - record.amount),
+            }
+          : m
+      )
+    );
+
+    // 4. Notify the Member
+    const memberNotification: AppNotification = {
+      id: `notif-conf-${Date.now()}`,
+      circleId: currentCircle.id,
+      userId: record.userId,
+      title: 'Savings Payment Confirmed! ✅',
+      message: `Circle Admin ${currentUser.name} confirmed your payment of ₹${record.amount} for ${record.dueDate || formattedDate}. Fund updated!`,
+      type: 'payment_received',
+      date: new Date().toISOString(),
+      isRead: false,
+      linkToTab: 'savings',
+    };
+    setNotifications((prev) => [memberNotification, ...prev]);
+
+    // 5. Append to Audit Trail
+    const newAudit: AuditLog = {
+      id: `audit-${Date.now()}`,
+      circleId: currentCircle.id,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      action: 'Payment Confirmed by Admin',
+      timestamp: new Date().toISOString(),
+      oldValue: 'Status: Pending Confirmation',
+      newValue: `Status: Paid (Admin ${currentUser.name} confirmed ₹${record.amount} for ${memberName})`,
+      ipInfo: '103.14.88.2 (Palakkad, IN)',
+    };
+    setAuditLogs((prev) => [newAudit, ...prev]);
+
+    showToast(`Payment of ₹${record.amount} from ${memberName} confirmed! Circle fund updated.`);
+  };
+
+  // Actions: Circle Admin Declines Savings Payment ("Not Received")
+  const handleAdminRejectSavingsPayment = (record: ContributionRecord, reason?: string) => {
+    if (!currentUser) return;
+    if (currentUser.role === 'member') {
+      showToast('Permission denied: Only Circle Admins can decline payment claims.');
+      return;
+    }
+
+    const member =
+      members.find((m) => m.userId === record.userId || m.id === record.userId) ||
+      users.find((u) => u.id === record.userId);
+    const memberName = member?.name || record.userName || 'Member';
+
+    const rejectedRecord: ContributionRecord = {
+      ...record,
+      status: 'Pending',
+      paidAmount: 0,
+      rejectionReason: reason || 'Payment not received in admin account',
+      referenceNote: reason ? `Declined: ${reason}` : 'Payment not received',
+      adminDecisionDate: new Date().toISOString(),
+    };
+
+    setContributions((prev) => {
+      const filtered = prev.filter((c) => c.id !== record.id);
+      const next = [rejectedRecord, ...filtered];
+      saveLocalState('contributions', next);
+      return next;
+    });
+
+    dbUpsertContribution(rejectedRecord);
+    broadcastContributionUpdate(currentCircle.id, rejectedRecord);
+
+    // Notify Member
+    const memberNotification: AppNotification = {
+      id: `notif-rej-${Date.now()}`,
+      circleId: currentCircle.id,
+      userId: record.userId,
+      title: 'Payment Claim Not Received ⚠️',
+      message: `Circle Admin ${currentUser.name} was unable to verify your payment of ₹${record.amount}${reason ? `: "${reason}"` : ''}. Status remains Pending.`,
+      type: 'payment_received',
+      date: new Date().toISOString(),
+      isRead: false,
+      linkToTab: 'savings',
+    };
+    setNotifications((prev) => [memberNotification, ...prev]);
+
+    // Audit Log
+    const newAudit: AuditLog = {
+      id: `audit-${Date.now()}`,
+      circleId: currentCircle.id,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      action: 'Payment Declined by Admin',
+      timestamp: new Date().toISOString(),
+      oldValue: 'Status: Pending Confirmation',
+      newValue: `Status: Pending (Admin marked ₹${record.amount} from ${memberName} as Not Received)`,
+      ipInfo: '103.14.88.2 (Palakkad, IN)',
+    };
+    setAuditLogs((prev) => [newAudit, ...prev]);
+
+    showToast(`Marked as Not Received. Status reverted to Pending.`);
   };
 
   // Actions: Add Expense
@@ -2381,6 +2666,9 @@ export default function App() {
                   onOpenRecordModal={() => {
                     if (currentUser.role !== 'member') setIsRecordPaymentOpen(true);
                   }}
+                  onMemberSubmitPayment={handleMemberSubmitSavingsPayment}
+                  onAdminConfirmPayment={handleAdminConfirmSavingsPayment}
+                  onAdminRejectPayment={handleAdminRejectSavingsPayment}
                 />
               )}
 

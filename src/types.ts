@@ -36,6 +36,8 @@ export interface Circle {
   adminSecretCode?: string;
   adminName?: string;
   adminPhotoUrl?: string;
+  adminUpiId?: string;
+  adminPhone?: string;
 }
 
 export interface CircleMember {
@@ -56,7 +58,7 @@ export interface CircleMember {
   password?: string;
 }
 
-export type ContributionStatus = 'Paid' | 'Pending' | 'Late' | 'Partially Paid' | 'Waived';
+export type ContributionStatus = 'Paid' | 'Pending' | 'Pending Confirmation' | 'Late' | 'Partially Paid' | 'Waived';
 
 export interface ContributionRecord {
   id: string;
@@ -74,6 +76,9 @@ export interface ContributionRecord {
   referenceNote?: string;
   receiptUrl?: string;
   recordedBy?: string;
+  submittedAt?: string;
+  adminDecisionDate?: string;
+  rejectionReason?: string;
 }
 
 export type TransactionType =
