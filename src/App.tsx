@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { MobileNav } from './components/MobileNav';
@@ -95,7 +95,10 @@ import {
   dbSyncLocalToSupabase,
   loadLocalState,
   saveLocalState,
+  broadcastNotification,
+  subscribeToRealtimeNotifications,
 } from './lib/supabase';
+import { isNotificationVisibleToUser } from './utils/notificationUtils';
 
 import {
   User,
@@ -215,7 +218,21 @@ export default function App() {
     }
     return filtered;
   });
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>(() => {
+    const saved = loadLocalState<AppNotification[]>('notifications', INITIAL_NOTIFICATIONS);
+    const filtered = saved.filter((n) => n.circleId !== 'circle-buddyfund-main');
+    if (filtered.length !== saved.length) {
+      saveLocalState('notifications', filtered);
+    }
+    return filtered;
+  });
+
+  // Role and user-specific visible notifications (prevents cross-role opposite notifications)
+  const userVisibleNotifications = useMemo(() => {
+    return notifications.filter((n) =>
+      isNotificationVisibleToUser(n, currentUser, currentCircleId)
+    );
+  }, [notifications, currentUser, currentCircleId]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => {
     const saved = loadLocalState<AuditLog[]>('audit_logs', INITIAL_AUDIT_LOGS);
     const filtered = saved.filter((a) => a.circleId !== 'circle-buddyfund-main');
@@ -702,6 +719,19 @@ export default function App() {
       }
     );
 
+    // Realtime Notification Listener across tabs & devices
+    const unsubscribeNotifications = subscribeToRealtimeNotifications(
+      currentCircleId,
+      (newNotif) => {
+        setNotifications((prev) => {
+          if (prev.some((n) => n.id === newNotif.id)) return prev;
+          const next = [newNotif, ...prev];
+          saveLocalState('notifications', next);
+          return next;
+        });
+      }
+    );
+
     // 8. High-Frequency Polling Loop:
     // Poll every 1.5 seconds to guarantee instant sync across tabs and member devices without manual refresh
     const pollInterval = setInterval(() => {
@@ -893,6 +923,7 @@ export default function App() {
       unsubscribeTours();
       unsubscribeExpenses();
       unsubscribeTransactions();
+      unsubscribeNotifications();
       clearInterval(pollInterval);
     };
   }, [currentCircleId, activeTab]);
@@ -1035,13 +1066,20 @@ export default function App() {
 
   // Notification handlers
   const handleMarkNotificationRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-    );
+    setNotifications((prev) => {
+      const next = prev.map((n) => (n.id === id ? { ...n, isRead: true } : n));
+      saveLocalState('notifications', next);
+      return next;
+    });
   };
 
   const handleMarkAllNotificationsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    const visibleIds = new Set(userVisibleNotifications.map((n) => n.id));
+    setNotifications((prev) => {
+      const next = prev.map((n) => (visibleIds.has(n.id) ? { ...n, isRead: true } : n));
+      saveLocalState('notifications', next);
+      return next;
+    });
     showToast('All notifications marked as read');
   };
 
@@ -1265,12 +1303,13 @@ export default function App() {
     dbUpsertContribution(recordToSave);
     broadcastContributionUpdate(currentCircle.id, recordToSave);
 
-    // Notify Circle Admin
+    // Notify Circle Admin (strictly role: circle_admin)
     const adminMembers = circleMembers.filter((m) => m.role === 'circle_admin');
     const adminNotification: AppNotification = {
       id: `notif-claim-${Date.now()}`,
       circleId: currentCircle.id,
       userId: adminMembers[0]?.userId || 'admin',
+      targetRole: 'circle_admin',
       title: 'Savings Payment Confirmation Request',
       message: `${memberName} submitted ₹${data.amount} via ${data.paymentMethod} (${data.referenceNote}). Please confirm if payment is received.`,
       type: 'payment_received',
@@ -1278,7 +1317,12 @@ export default function App() {
       isRead: false,
       linkToTab: 'savings',
     };
-    setNotifications((prev) => [adminNotification, ...prev]);
+    setNotifications((prev) => {
+      const next = [adminNotification, ...prev];
+      saveLocalState('notifications', next);
+      return next;
+    });
+    broadcastNotification(adminNotification);
 
     // Audit Log
     const newAudit: AuditLog = {
@@ -1388,11 +1432,12 @@ export default function App() {
       )
     );
 
-    // 4. Notify the Member
+    // 4. Notify the Member (strictly role: member for record.userId)
     const memberNotification: AppNotification = {
       id: `notif-conf-${Date.now()}`,
       circleId: currentCircle.id,
       userId: record.userId,
+      targetRole: 'member',
       title: 'Savings Payment Confirmed! ✅',
       message: `Circle Admin ${currentUser.name} confirmed your payment of ₹${record.amount} for ${record.dueDate || formattedDate}. Fund updated!`,
       type: 'payment_received',
@@ -1400,7 +1445,12 @@ export default function App() {
       isRead: false,
       linkToTab: 'savings',
     };
-    setNotifications((prev) => [memberNotification, ...prev]);
+    setNotifications((prev) => {
+      const next = [memberNotification, ...prev];
+      saveLocalState('notifications', next);
+      return next;
+    });
+    broadcastNotification(memberNotification);
 
     // 5. Append to Audit Trail
     const newAudit: AuditLog = {
@@ -1451,11 +1501,12 @@ export default function App() {
     dbUpsertContribution(rejectedRecord);
     broadcastContributionUpdate(currentCircle.id, rejectedRecord);
 
-    // Notify Member
+    // Notify Member (strictly role: member for record.userId)
     const memberNotification: AppNotification = {
       id: `notif-rej-${Date.now()}`,
       circleId: currentCircle.id,
       userId: record.userId,
+      targetRole: 'member',
       title: 'Payment Claim Not Received ⚠️',
       message: `Circle Admin ${currentUser.name} was unable to verify your payment of ₹${record.amount}${reason ? `: "${reason}"` : ''}. Status remains Pending.`,
       type: 'payment_received',
@@ -1463,7 +1514,12 @@ export default function App() {
       isRead: false,
       linkToTab: 'savings',
     };
-    setNotifications((prev) => [memberNotification, ...prev]);
+    setNotifications((prev) => {
+      const next = [memberNotification, ...prev];
+      saveLocalState('notifications', next);
+      return next;
+    });
+    broadcastNotification(memberNotification);
 
     // Audit Log
     const newAudit: AuditLog = {
@@ -2613,7 +2669,7 @@ export default function App() {
         allUsers={users.length > 0 ? users : [currentUser]}
         circles={circles}
         currentCircle={currentCircle}
-        notifications={notifications}
+        notifications={userVisibleNotifications}
         onSelectCircle={handleSelectCircle}
         onSwitchUser={handleSwitchUser}
         onOpenCreateCircle={() => setIsCreateCircleOpen(true)}
@@ -2633,7 +2689,7 @@ export default function App() {
           activeTab={activeTab}
           onSelectTab={handleNavigateTab}
           userRole={currentUser.role}
-          unreadCount={notifications.filter((n) => !n.isRead).length}
+          unreadCount={userVisibleNotifications.filter((n) => !n.isRead).length}
           onOpenCreateCircle={() => setIsCreateCircleOpen(true)}
           onOpenMobileAppModal={() => setIsMobileAppModalOpen(true)}
         />
@@ -2844,7 +2900,7 @@ export default function App() {
       <MobileNav
         activeTab={activeTab}
         currentUser={currentUser}
-        unreadCount={notifications.filter((n) => !n.isRead).length}
+        unreadCount={userVisibleNotifications.filter((n) => !n.isRead).length}
         onSelectTab={handleNavigateTab}
         onOpenMoreMenu={() => setShowMobileMoreMenu(true)}
       />

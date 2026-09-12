@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { User, Circle, AppNotification } from '../types';
 import { Logo } from './Logo';
+import { isNotificationVisibleToUser } from '../utils/notificationUtils';
 
 interface HeaderProps {
   currentUser: User;
@@ -57,7 +58,10 @@ export const Header: React.FC<HeaderProps> = ({
   const [showCircleMenu, setShowCircleMenu] = useState(false);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
 
-  const unreadNotifs = notifications.filter((n) => !n.isRead);
+  const visibleNotifs = notifications.filter((n) =>
+    isNotificationVisibleToUser(n, currentUser, currentCircle?.id)
+  );
+  const unreadNotifs = visibleNotifs.filter((n) => !n.isRead);
 
   return (
     <header className="sticky top-0 z-40 bg-white/98 backdrop-blur-md border-b border-slate-200 shadow-sm w-full">
@@ -349,10 +353,10 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
-              {notifications.length === 0 ? (
+              {visibleNotifs.length === 0 ? (
                 <div className="p-6 text-center text-xs text-slate-500">No notifications yet</div>
               ) : (
-                notifications.map((n) => (
+                visibleNotifs.map((n) => (
                   <div
                     key={n.id}
                     onClick={() => {

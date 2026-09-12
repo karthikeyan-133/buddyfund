@@ -261,6 +261,7 @@ export interface AppNotification {
   id: string;
   userId?: string;
   circleId?: string;
+  targetRole?: 'circle_admin' | 'member' | 'all';
   title: string;
   message: string;
   type: 'contribution_due' | 'payment_received' | 'loan_due' | 'tour_update' | 'vote_active' | 'general';

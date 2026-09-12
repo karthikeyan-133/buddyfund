@@ -14,6 +14,7 @@ import {
   Vote,
   VoteOption,
   AuditLog,
+  AppNotification,
 } from '../types';
 
 // Supabase project URL from user configuration
@@ -2155,5 +2156,117 @@ export async function dbSyncLocalToSupabase(): Promise<void> {
     console.warn('Supabase auto-sync exception:', err);
   }
 }
+
+// Dedicated shared BroadcastChannel for notifications
+let sharedNotifBC: BroadcastChannel | null = null;
+function getNotifBC(): BroadcastChannel | null {
+  if (typeof BroadcastChannel === 'undefined') return null;
+  if (!sharedNotifBC) {
+    sharedNotifBC = new BroadcastChannel('buddyfund_realtime_notifications');
+  }
+  return sharedNotifBC;
+}
+
+export function broadcastNotification(notification: AppNotification): void {
+  // 1. Cross-tab BroadcastChannel
+  try {
+    const bc = getNotifBC();
+    bc?.postMessage({ type: 'NOTIFICATION_CREATED', notification });
+  } catch {}
+
+  // 2. Same-window custom event
+  try {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('buddyfund_notification_sync', {
+          detail: { type: 'NOTIFICATION_CREATED', notification },
+        })
+      );
+    }
+  } catch {}
+
+  // 3. Supabase Realtime WebSocket broadcast
+  const client = getSupabaseClient();
+  if (client) {
+    try {
+      const channelName = `realtime-notifs-${notification.circleId || 'global'}`;
+      const sendCh = client.channel(channelName);
+      sendCh.subscribe((status: string) => {
+        if (status === 'SUBSCRIBED') {
+          sendCh.send({
+            type: 'broadcast',
+            event: 'notification_created',
+            payload: notification,
+          });
+        }
+      });
+    } catch (err) {
+      console.warn('Supabase broadcastNotification error:', err);
+    }
+  }
+}
+
+export function subscribeToRealtimeNotifications(
+  circleId: string,
+  onNotification: (notif: AppNotification) => void
+): () => void {
+  const client = getSupabaseClient();
+  let supaChannel: any = null;
+  let tabChannel: BroadcastChannel | null = null;
+
+  // 1. Supabase Realtime
+  if (client) {
+    try {
+      const channelName = `realtime-notifs-${circleId || 'global'}`;
+      supaChannel = client.channel(channelName, {
+        config: { broadcast: { self: false } },
+      });
+      supaChannel
+        .on('broadcast', { event: 'notification_created' }, (msg: any) => {
+          if (msg?.payload) {
+            onNotification(msg.payload);
+          }
+        })
+        .subscribe();
+    } catch (err) {
+      console.warn('Supabase realtime notifications subscription exception:', err);
+    }
+  }
+
+  // 2. Cross-tab BroadcastChannel
+  try {
+    if (typeof BroadcastChannel !== 'undefined') {
+      tabChannel = new BroadcastChannel('buddyfund_realtime_notifications');
+      tabChannel.onmessage = (event) => {
+        if (event?.data?.type === 'NOTIFICATION_CREATED' && event.data.notification) {
+          onNotification(event.data.notification);
+        }
+      };
+    }
+  } catch {}
+
+  // 3. Window CustomEvent
+  const handleCustomEvent = (e: Event) => {
+    const ce = e as CustomEvent;
+    if (ce?.detail?.type === 'NOTIFICATION_CREATED' && ce.detail.notification) {
+      onNotification(ce.detail.notification);
+    }
+  };
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('buddyfund_notification_sync', handleCustomEvent);
+  }
+
+  return () => {
+    try {
+      if (supaChannel) client?.removeChannel(supaChannel);
+      if (tabChannel) tabChannel.close();
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('buddyfund_notification_sync', handleCustomEvent);
+      }
+    } catch {}
+  };
+}
+
 
 
