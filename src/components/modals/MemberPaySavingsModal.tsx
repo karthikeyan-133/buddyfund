@@ -2,12 +2,9 @@ import React, { useState } from 'react';
 import {
   X,
   CreditCard,
-  QrCode,
-  Copy,
-  Check,
-  ExternalLink,
   Info,
   Send,
+  Calendar,
 } from 'lucide-react';
 import { Circle, CircleMember, ContributionRecord, User } from '../../types';
 
@@ -41,35 +38,12 @@ export const MemberPaySavingsModal: React.FC<MemberPaySavingsModalProps> = ({
   const [reference, setReference] = useState('');
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [userNote, setUserNote] = useState('');
-  const [copiedUpi, setCopiedUpi] = useState(false);
-  const [showQr, setShowQr] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
   const currency = circle.currencySymbol || '₹';
   const adminName = circle.adminName || adminMember?.name || 'Circle Admin';
-  const adminPhone = circle.adminPhone || adminMember?.phone || '';
-  
-  // Resolve UPI ID: circle.adminUpiId or derived from phone or clean circle name
-  const rawUpi =
-    circle.adminUpiId ||
-    (adminPhone ? `${adminPhone.replace(/[^0-9]/g, '')}@upi` : `${circle.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@okaxis`);
-  const adminUpiId = rawUpi.trim();
-
-  // Standard UPI URI scheme
-  const upiPayUrl = `upi://pay?pa=${encodeURIComponent(adminUpiId)}&pn=${encodeURIComponent(
-    adminName
-  )}&am=${record.amount}&cu=INR&tn=${encodeURIComponent(`${circle.name} Weekly Savings`)}`;
-
-  // Public QR code service
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiPayUrl)}`;
-
-  const handleCopyUpi = () => {
-    navigator.clipboard.writeText(adminUpiId);
-    setCopiedUpi(true);
-    setTimeout(() => setCopiedUpi(false), 2500);
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,19 +69,19 @@ export const MemberPaySavingsModal: React.FC<MemberPaySavingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
-      <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
-        {/* Mobile Pull Drag Bar */}
+      <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+        {/* Mobile Drag Indicator */}
         <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto sm:hidden -mt-1 mb-2" />
 
-        {/* Header */}
+        {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
             <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full mb-1">
               <CreditCard className="w-3.5 h-3.5" />
-              Weekly Savings Contribution
+              Weekly Savings Payment
             </div>
             <h3 className="font-bold text-slate-900 text-lg font-['Space_Grotesk']">
-              Pay {currency}{record.amount.toLocaleString()}
+              Submit Savings Payment
             </h3>
             <p className="text-xs text-slate-500">
               {circle.name} • Due: {record.dueDate || record.weekLabel || 'Current Cycle'}
@@ -122,94 +96,27 @@ export const MemberPaySavingsModal: React.FC<MemberPaySavingsModalProps> = ({
           </button>
         </div>
 
-        {/* Amount & Admin Details Card */}
-        <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-4 text-white shadow-md space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs uppercase tracking-wider text-emerald-200 font-semibold">
-              Amount Due
+        {/* Summary Card */}
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <span className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold block">
+              Contribution Amount
             </span>
-            <span className="text-[11px] bg-white/20 text-emerald-100 px-2 py-0.5 rounded-md font-medium">
-              Verified Circle Due
-            </span>
-          </div>
-
-          <div className="text-3xl font-extrabold font-mono tracking-tight">
-            {currency}{record.amount.toLocaleString()}
-          </div>
-
-          {/* Admin Beneficiary Info */}
-          <div className="pt-2 border-t border-white/15 flex items-center justify-between text-xs">
-            <div>
-              <span className="text-emerald-200 text-[11px] block">Pay To (Circle Admin)</span>
-              <span className="font-bold text-white text-sm">{adminName}</span>
-              {adminPhone && (
-                <span className="text-[11px] text-emerald-200 block">{adminPhone}</span>
-              )}
+            <div className="text-2xl font-extrabold font-mono text-emerald-700 mt-0.5">
+              {currency}{record.amount.toLocaleString()}
             </div>
-
-            <button
-              type="button"
-              onClick={() => setShowQr(!showQr)}
-              className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition active:scale-95"
-            >
-              <QrCode className="w-3.5 h-3.5" />
-              {showQr ? 'Hide QR' : 'Show QR'}
-            </button>
+          </div>
+          <div className="text-right">
+            <span className="text-[11px] text-slate-400 block font-medium">Circle Admin</span>
+            <span className="font-semibold text-slate-800 text-xs">{adminName}</span>
           </div>
         </div>
 
-        {/* UPI Details & Deep Link Box */}
-        {showQr && (
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center justify-center space-y-3 text-center animate-in zoom-in-95 duration-150">
-            <span className="text-xs font-semibold text-slate-700">
-              Scan with any UPI App (GPay, PhonePe, Paytm)
-            </span>
-            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 inline-block">
-              <img
-                src={qrCodeUrl}
-                alt="UPI Payment QR Code"
-                className="w-40 h-40 object-contain rounded-lg"
-              />
-            </div>
-            <p className="text-[11px] text-slate-400">
-              Instant scan &amp; transfer {currency}{record.amount}
-            </p>
-          </div>
-        )}
-
-        {/* UPI ID Quick Copy & Launch Bar */}
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium">Admin UPI ID:</span>
-            <div className="flex items-center gap-1.5">
-              <code className="font-mono font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200 text-[11px]">
-                {adminUpiId}
-              </code>
-              <button
-                type="button"
-                onClick={handleCopyUpi}
-                className="p-1.5 bg-white hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 rounded border border-slate-200 transition"
-                title="Copy UPI ID"
-              >
-                {copiedUpi ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-              </button>
-            </div>
-          </div>
-
-          <a
-            href={upiPayUrl}
-            className="w-full py-2 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold rounded-lg text-xs transition flex items-center justify-center gap-1.5 border border-emerald-200"
-          >
-            <span>Tap to Pay with UPI App (GPay / PhonePe / Paytm)</span>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
-        </div>
-
-        {/* Submission Form */}
-        <form onSubmit={handleSubmit} className="space-y-3.5 pt-1 text-xs sm:text-sm">
+        {/* Payment Submission Form */}
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs sm:text-sm">
           <div>
             <label className="block text-slate-700 font-semibold mb-1.5 text-xs">
-              How did you make this payment?
+              Payment Method
             </label>
             <div className="grid grid-cols-3 gap-2">
               {(['UPI', 'Cash', 'Bank Transfer'] as const).map((m) => (
@@ -246,46 +153,45 @@ export const MemberPaySavingsModal: React.FC<MemberPaySavingsModalProps> = ({
             <div>
               <label className="block text-slate-700 font-semibold mb-1 text-xs">
                 {method === 'UPI'
-                  ? 'UTR / UPI Ref Number'
+                  ? 'UPI / UTR Ref'
                   : method === 'Bank Transfer'
-                  ? 'Transfer Reference / IMPS'
-                  : 'Cash Handover Details'}
+                  ? 'Transfer Reference'
+                  : 'Handover Details'}
               </label>
               <input
                 type="text"
                 placeholder={
                   method === 'UPI'
-                    ? '12-digit UPI UTR (e.g. 4238...)'
+                    ? 'e.g. UPI Ref / UTR'
                     : method === 'Bank Transfer'
-                    ? 'Ref / IMPS Number'
-                    : 'Handed directly to admin'
+                    ? 'e.g. IMPS / Ref'
+                    : 'Handed to admin'
                 }
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-slate-900 font-mono text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                required={method === 'UPI' || method === 'Bank Transfer'}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-slate-900 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
               />
             </div>
           </div>
 
           <div>
             <label className="block text-slate-700 font-semibold mb-1 text-xs">
-              Note to Admin (Optional)
+              Note for Admin (Optional)
             </label>
             <input
               type="text"
-              placeholder="e.g. Sent from Google Pay account"
+              placeholder="e.g. Paid from Google Pay / Cash given"
               value={userNote}
               onChange={(e) => setUserNote(e.target.value)}
               className="w-full px-3 py-2 border border-slate-200 rounded-xl text-slate-900 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
             />
           </div>
 
-          {/* Verification Notice */}
+          {/* Admin Confirmation Info Note */}
           <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-xl text-[11px] text-amber-900 flex items-start gap-2 leading-relaxed">
             <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <div>
-              <span className="font-bold">Admin Verification Notice:</span> Once submitted, this payment will be marked as <strong className="text-amber-800">Pending Confirmation</strong>. Circle Admin <span className="font-semibold">{adminName}</span> will receive a confirmation request message to check if payment is received. Only when the admin clicks <span className="font-semibold text-emerald-800">"Payment Received (Get)"</span> will the circle fund update.
+              <span className="font-bold">Confirmation Flow:</span> Submitting this will mark your payment as <strong className="text-amber-800">Pending Confirmation</strong>. Circle Admin <span className="font-semibold">{adminName}</span> will receive a message to check if payment was received. Only when the admin clicks <span className="font-semibold text-emerald-800">"Payment Received (Get)"</span> will the status update to Paid.
             </div>
           </div>
 
