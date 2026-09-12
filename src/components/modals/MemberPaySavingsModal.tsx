@@ -153,19 +153,19 @@ export const MemberPaySavingsModal: React.FC<MemberPaySavingsModalProps> = ({
             <div>
               <label className="block text-slate-700 font-semibold mb-1 text-xs">
                 {method === 'UPI'
-                  ? 'UPI / UTR Ref'
+                  ? 'UPI / UTR Ref (Optional)'
                   : method === 'Bank Transfer'
-                  ? 'Transfer Reference'
-                  : 'Handover Details'}
+                  ? 'Transfer Reference (Optional)'
+                  : 'Handover Details (Optional)'}
               </label>
               <input
                 type="text"
                 placeholder={
                   method === 'UPI'
-                    ? 'e.g. UPI Ref / UTR'
+                    ? 'e.g. UPI Ref / UTR (Optional)'
                     : method === 'Bank Transfer'
-                    ? 'e.g. IMPS / Ref'
-                    : 'Handed to admin'
+                    ? 'e.g. IMPS / Ref (Optional)'
+                    : 'Handed to admin (Optional)'
                 }
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
