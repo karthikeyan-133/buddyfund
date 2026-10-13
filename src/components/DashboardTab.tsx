@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Wallet,
   TrendingUp,
@@ -14,6 +14,10 @@ import {
   PlusCircle,
   ChevronRight,
   AlertCircle,
+  Cake,
+  Gift,
+  PartyPopper,
+  MessageCircle,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -22,11 +26,14 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { Circle, User, Transaction, Tour, Loan, Goal } from '../types';
+import { Circle, User, CircleMember, Transaction, Tour, Loan, Goal } from '../types';
+import { getUpcomingBirthdays, isBirthdayToday } from '../utils/birthdayUtils';
+import { BirthdayWishesModal } from './modals/BirthdayWishesModal';
 
 interface DashboardTabProps {
   circle: Circle;
   currentUser: User;
+  members?: CircleMember[];
   wallet: {
     currentBalance: number;
     totalContributions: number;
@@ -64,6 +71,7 @@ const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#64748b'
 export const DashboardTab: React.FC<DashboardTabProps> = ({
   circle,
   currentUser,
+  members = [],
   wallet,
   membersCount,
   currentWeekStats,
@@ -81,6 +89,37 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
 }) => {
   const currency = circle.currencySymbol || '₹';
   const isAdmin = currentUser.role === 'circle_admin' || currentUser.role === 'super_admin';
+
+  // 10-Day Upcoming Birthdays Calculation
+  const upcomingBirthdays = useMemo(() => {
+    return getUpcomingBirthdays(members, 10);
+  }, [members]);
+
+  // Check if today is the logged-in user's birthday
+  const isMyBirthdayToday = useMemo(() => {
+    const myMember = members.find((m) => m.userId === currentUser.id || m.id === currentUser.id);
+    const myDob = currentUser.dob || myMember?.dob;
+    return isBirthdayToday(myDob);
+  }, [currentUser, members]);
+
+  const [showBirthdayModal, setShowBirthdayModal] = useState(false);
+  const [selectedCelebrant, setSelectedCelebrant] = useState<User | CircleMember>(currentUser);
+
+  // Auto-open celebratory birthday popup on user's birthday (once per day)
+  useEffect(() => {
+    if (isMyBirthdayToday) {
+      const currentYear = new Date().getFullYear();
+      const key = `bday_modal_seen_${currentUser.id}_${currentYear}`;
+      const alreadySeen = localStorage.getItem(key);
+      if (!alreadySeen) {
+        setSelectedCelebrant(currentUser);
+        setShowBirthdayModal(true);
+        try {
+          localStorage.setItem(key, 'true');
+        } catch {}
+      }
+    }
+  }, [isMyBirthdayToday, currentUser.id]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -145,6 +184,165 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Birthday Celebration Hero Banner (If today is logged-in user's birthday) */}
+      {isMyBirthdayToday && (
+        <div className="relative overflow-hidden bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 rounded-2xl p-5 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 border border-amber-300/50 animate-in fade-in zoom-in-95 duration-200">
+          <div className="flex items-center gap-4 text-center sm:text-left">
+            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-3xl shadow-inner flex-shrink-0 animate-bounce">
+              🎂
+            </div>
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/20 text-yellow-200 text-[11px] font-bold uppercase tracking-wider mb-1">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Ithanu_njangal Sponsored Birthday Wishes</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black font-['Space_Grotesk'] tracking-tight">
+                HAPPY BIRTHDAY, {currentUser.name.toUpperCase()}! 🎉
+              </h3>
+              <p className="text-xs text-yellow-100 font-medium">
+                Your squad is celebrating you today! Click below to view your personalized birthday graphic card &amp; sponsored perks.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedCelebrant(currentUser);
+              setShowBirthdayModal(true);
+            }}
+            className="flex-shrink-0 px-4 py-2.5 bg-white text-purple-900 hover:bg-yellow-100 font-bold text-xs sm:text-sm rounded-xl shadow-lg transition active:scale-95 flex items-center gap-2 cursor-pointer"
+          >
+            <span>View Birthday Card 🎁</span>
+          </button>
+        </div>
+      )}
+
+      {/* 10-Day Upcoming Birthday Reminder Card */}
+      {upcomingBirthdays.length > 0 && (
+        <div className="bg-gradient-to-br from-amber-50/90 via-rose-50/50 to-purple-50/80 border-2 border-amber-300/70 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3.5 animate-in fade-in duration-150">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🎂</span>
+              <div>
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 font-cute flex items-center gap-2" style={{ fontFamily: "'Comfortaa', 'Fredoka', 'Quicksand', cursive, sans-serif" }}>
+                  <span>Squad Birthday Reminders</span>
+                  <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-200/80 text-amber-900 rounded-full">
+                    Next 10 Days
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-600 font-aesthetic">
+                  Plan celebrations and squad treats ahead of time
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-amber-800 bg-amber-100 px-2.5 py-1 rounded-xl">
+              {upcomingBirthdays.length} {upcomingBirthdays.length === 1 ? 'Birthday' : 'Birthdays'}
+            </span>
+          </div>
+
+          {/* Celebrants Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {upcomingBirthdays.map((item) => {
+              const isUser = item.member.userId === currentUser.id || item.member.id === currentUser.id;
+              const waText = `Happy Birthday ${item.member.name}! 🎉🎂 Wishing you a wonderful year ahead from our ${circle.name} squad on Ithanu_njangal!`;
+              const waUrl = item.member.phone
+                ? `https://api.whatsapp.com/send?phone=${item.member.phone.replace(/[^0-9]/g, '')}&text=${encodeURIComponent(waText)}`
+                : `https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`;
+
+              return (
+                <div
+                  key={item.member.id}
+                  className={`p-3 rounded-xl border transition flex items-center justify-between gap-3 ${
+                    item.isToday
+                      ? 'bg-gradient-to-r from-rose-50 to-amber-50 border-rose-300 shadow-xs ring-2 ring-rose-400/40'
+                      : 'bg-white border-slate-200 hover:border-amber-300 shadow-2xs'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="relative flex-shrink-0">
+                      <img
+                        src={item.member.avatarUrl}
+                        alt={item.member.name}
+                        className="w-11 h-11 rounded-full object-cover border-2 border-amber-400 shadow-xs"
+                      />
+                      {item.isToday && (
+                        <span className="absolute -top-1 -right-1 text-xs">👑</span>
+                      )}
+                    </div>
+                    <div className="min-w-0 truncate">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="font-bold text-slate-900 text-xs sm:text-sm truncate">
+                          {item.member.name}
+                        </span>
+                        {isUser && (
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded-sm">
+                            You
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
+                        <span className="font-semibold text-slate-700">📅 {item.formattedBirthday}</span>
+                        <span>•</span>
+                        <span className="text-slate-400 capitalize">
+                          {item.member.role === 'circle_admin' ? 'Admin' : 'Member'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Countdown Badge & Action */}
+                  <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                    {item.isToday ? (
+                      <span className="px-2 py-0.5 bg-rose-600 text-white font-extrabold text-[10px] sm:text-xs rounded-full shadow-xs animate-pulse">
+                        🎉 TODAY!
+                      </span>
+                    ) : item.daysRemaining === 1 ? (
+                      <span className="px-2 py-0.5 bg-amber-500 text-white font-bold text-[10px] sm:text-xs rounded-full shadow-xs">
+                        ⏰ Tomorrow!
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 bg-purple-100 text-purple-800 font-bold text-[10px] sm:text-xs rounded-full">
+                        🎈 in {item.daysRemaining} days
+                      </span>
+                    )}
+
+                    <div className="flex items-center gap-1">
+                      {/* View Wishes Popup Graphic */}
+                      {item.isToday && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedCelebrant(item.member);
+                            setShowBirthdayModal(true);
+                          }}
+                          className="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold rounded-lg shadow-2xs transition active:scale-95 cursor-pointer"
+                          title="View Ithanu_njangal Birthday Card"
+                        >
+                          View Card 🎁
+                        </button>
+                      )}
+
+                      {/* Send WhatsApp Wish */}
+                      {!isUser && (
+                        <a
+                          href={waUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg shadow-2xs transition flex items-center gap-1 active:scale-95"
+                          title="Send birthday wish on WhatsApp"
+                        >
+                          <span>Wish 💬</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Ithanu_njangal Modules - Aesthetic Quick Access Grid */}
       <div className="space-y-2.5 sm:space-y-3">
@@ -623,6 +821,14 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           )}
         </div>
       </div>
+
+      {/* Ithanu_njangal Sponsored Birthday Wishes Graphic Modal */}
+      <BirthdayWishesModal
+        isOpen={showBirthdayModal}
+        onClose={() => setShowBirthdayModal(false)}
+        celebrant={selectedCelebrant}
+        circle={circle}
+      />
     </div>
   );
 };

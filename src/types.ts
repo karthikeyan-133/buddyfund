@@ -12,6 +12,7 @@ export interface User {
   isVerified: boolean;
   status: 'active' | 'suspended';
   password?: string;
+  dob?: string;
 }
 
 export type ContributionFrequency = 'weekly' | 'biweekly' | 'monthly';
@@ -57,6 +58,7 @@ export interface CircleMember {
   outstandingLoan: number;
   loanRepaymentStatus: 'none' | 'good' | 'overdue';
   password?: string;
+  dob?: string;
 }
 
 export type ContributionStatus = 'Paid' | 'Pending' | 'Pending Confirmation' | 'Late' | 'Partially Paid' | 'Waived';

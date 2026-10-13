@@ -2129,6 +2129,7 @@ export default function App() {
     email?: string;
     password?: string;
     role: 'circle_admin' | 'member';
+    dob?: string;
   }) => {
     const newUserId = `user-${Date.now()}`;
     const autoEmail = data.email || `${data.name.toLowerCase().replace(/\s+/g, '')}@buddyfund.app`;
@@ -2144,6 +2145,7 @@ export default function App() {
       circleIds: [currentCircle.id],
       isVerified: true,
       status: 'active',
+      dob: data.dob,
     };
     setUsers((prev) => [...prev, newUser]);
 
@@ -2163,6 +2165,7 @@ export default function App() {
       pendingContribution: currentCircle.contributionAmount,
       outstandingLoan: 0,
       loanRepaymentStatus: 'none',
+      dob: data.dob,
     };
     setMembers((prev) => [...prev, newMember]);
     dbUpsertMember(newMember);
@@ -2363,6 +2366,7 @@ export default function App() {
     email: string;
     phone: string;
     avatarUrl: string;
+    dob?: string;
   }) => {
     if (!currentUser) return;
 
@@ -2394,6 +2398,7 @@ export default function App() {
             email: updatedData.email,
             phone: updatedData.phone,
             avatarUrl: updatedData.avatarUrl,
+            dob: updatedData.dob !== undefined ? updatedData.dob : m.dob,
           };
           dbUpsertMember(updatedMember);
           return updatedMember;
@@ -2727,6 +2732,7 @@ export default function App() {
                 <DashboardTab
                   circle={currentCircle}
                   currentUser={currentUser}
+                  members={circleMembers}
                   wallet={wallet}
                   membersCount={circleMembers.length}
                   currentWeekStats={currentWeekStats}

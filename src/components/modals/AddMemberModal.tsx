@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserPlus, Eye, EyeOff, Lock } from 'lucide-react';
+import { UserPlus, Eye, EyeOff, Lock, Calendar, Cake } from 'lucide-react';
 
 interface AddMemberModalProps {
   isOpen: boolean;
@@ -10,6 +10,7 @@ interface AddMemberModalProps {
     email?: string;
     password?: string;
     role: 'circle_admin' | 'member';
+    dob?: string;
   }) => void;
 }
 
@@ -21,6 +22,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [dob, setDob] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<'circle_admin' | 'member'>('member');
 
@@ -34,10 +36,12 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
       phone,
       password: password || 'pass123',
       role,
+      dob: dob || undefined,
     });
     setName('');
     setPhone('');
     setPassword('');
+    setDob('');
     onClose();
   };
 
@@ -86,6 +90,24 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
               required
             />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-slate-700 font-medium">Friend's Date of Birth (DOB)</label>
+              <span className="text-[11px] text-amber-600 font-medium">🎂 10-Day Alert</span>
+            </div>
+            <div className="relative">
+              <input
+                type="date"
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white"
+              />
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1">
+              Triggers upcoming birthday alerts 10 days before and Ithanu_njangal birthday wishes card
+            </p>
           </div>
 
           <div>

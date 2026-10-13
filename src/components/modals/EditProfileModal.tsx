@@ -11,6 +11,7 @@ interface EditProfileModalProps {
     email: string;
     phone: string;
     avatarUrl: string;
+    dob?: string;
   }) => void;
 }
 
@@ -24,6 +25,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [dob, setDob] = useState('');
   const [showCustomUrlInput, setShowCustomUrlInput] = useState(false);
   const [customUrlInput, setCustomUrlInput] = useState('');
 
@@ -33,6 +35,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       setEmail(currentUser.email || '');
       setPhone(currentUser.phone || '');
       setAvatarUrl(currentUser.avatarUrl || '');
+      setDob(currentUser.dob || '');
       setShowCustomUrlInput(false);
       setCustomUrlInput('');
     }
@@ -61,6 +64,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       email: email.trim() || currentUser.email,
       phone: phone.trim() || currentUser.phone,
       avatarUrl: avatarUrl.trim() || currentUser.avatarUrl,
+      dob: dob || undefined,
     });
     onClose();
   };
@@ -209,6 +213,25 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               />
             </div>
+          </div>
+
+          {/* Date of Birth */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-slate-700 font-medium">Date of Birth (DOB)</label>
+              <span className="text-[11px] text-amber-600 font-medium">🎂 Birthday Reminders</span>
+            </div>
+            <div className="relative">
+              <input
+                type="date"
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white"
+              />
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1">
+              Enables 10-day advance squad birthday reminders and sponsored birthday card celebrations
+            </p>
           </div>
 
           {/* Action Buttons */}

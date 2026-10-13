@@ -13,10 +13,12 @@ import {
   Pencil,
   CreditCard,
   FileText,
+  Cake,
 } from 'lucide-react';
 import { User, Circle, CircleMember, ContributionRecord, Loan, Tour } from '../types';
 import { EditProfileModal } from './modals/EditProfileModal';
 import { dbFetchContributions } from '../lib/supabase';
+import { formatDobDisplay } from '../utils/birthdayUtils';
 
 interface MemberProfileViewProps {
   currentUser: User;
@@ -30,6 +32,7 @@ interface MemberProfileViewProps {
     email: string;
     phone: string;
     avatarUrl: string;
+    dob?: string;
   }) => void;
 }
 
@@ -264,6 +267,12 @@ export const MemberProfileView: React.FC<MemberProfileViewProps> = ({
                 <Calendar className="w-3.5 h-3.5" />
                 Member of {circle.name}
               </span>
+              {currentUser.dob && (
+                <span className="flex items-center gap-1 text-amber-800 font-semibold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                  <Cake className="w-3.5 h-3.5 text-amber-600" />
+                  <span>DOB: {formatDobDisplay(currentUser.dob)}</span>
+                </span>
+              )}
             </div>
           </div>
         </div>
