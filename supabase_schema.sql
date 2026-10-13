@@ -3,7 +3,9 @@
 -- Target URL: https://tlrzxjhnypxyrjkbiigl.supabase.co
 -- Run this in your Supabase Dashboard -> SQL Editor
 -- =================================================================
--- MIGRATION HELPER (Run these lines if you already created tables earlier):
+-- MIGRATION HELPER (Run these lines in Supabase SQL Editor if you already created tables earlier):
+-- ALTER TABLE circle_members ADD COLUMN IF NOT EXISTS dob date;
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS dob date;
 -- ALTER TABLE circles ADD COLUMN IF NOT EXISTS admin_name text default 'Circle Admin';
 -- ALTER TABLE circles ADD COLUMN IF NOT EXISTS admin_photo_url text default '';
 -- ALTER TABLE votes ADD COLUMN IF NOT EXISTS category text default 'Rule Change';
@@ -24,7 +26,7 @@ create table if not exists circles (
   currency_symbol text default '₹',
   contribution_frequency text default 'weekly',
   contribution_amount numeric default 500,
-  contribution_day text default 'Sunday',
+  contribution_day text default 'Wednesday',
   start_date date default current_date,
   expected_members integer default 10,
   admin_secret_code text default 'ADMIN2026',
@@ -48,7 +50,8 @@ create table if not exists users (
   circle_ids jsonb default '[]'::jsonb,
   is_verified boolean default true,
   status text default 'active',
-  password text default ''
+  password text default '',
+  dob date
 );
 
 -- 4. Circle Members Table
@@ -67,7 +70,8 @@ create table if not exists circle_members (
   pending_contribution numeric default 0,
   outstanding_loan numeric default 0,
   loan_repayment_status text default 'none',
-  password text default ''
+  password text default '',
+  dob date
 );
 
 -- 5. Contributions Table

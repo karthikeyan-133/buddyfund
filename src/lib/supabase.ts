@@ -307,6 +307,7 @@ export async function dbFetchMembers(circleId: string): Promise<CircleMember[]> 
         outstandingLoan: Number(m.outstanding_loan || 0),
         loanRepaymentStatus: m.loan_repayment_status || 'none',
         password: m.password || '',
+        dob: m.dob || undefined,
       }));
       // Merge with local state
       const local = loadLocalState<CircleMember[]>('members', []);
@@ -334,7 +335,7 @@ export async function dbUpsertMember(member: CircleMember): Promise<void> {
   const client = getSupabaseClient();
   if (client) {
     try {
-      await client.from('circle_members').upsert({
+      const basePayload = {
         id: member.id,
         user_id: member.userId,
         circle_id: member.circleId,
@@ -350,7 +351,18 @@ export async function dbUpsertMember(member: CircleMember): Promise<void> {
         outstanding_loan: member.outstandingLoan,
         loan_repayment_status: member.loanRepaymentStatus,
         password: member.password || '',
-      });
+      };
+
+      const fullPayload = {
+        ...basePayload,
+        dob: member.dob || null,
+      };
+
+      const { error: fullError } = await client.from('circle_members').upsert(fullPayload);
+      if (fullError) {
+        console.warn('Supabase: full member upsert with dob failed, retrying base:', fullError.message);
+        await client.from('circle_members').upsert(basePayload);
+      }
     } catch (err) {
       console.warn('Supabase upsertMember error:', err);
     }

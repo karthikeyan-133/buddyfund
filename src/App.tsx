@@ -633,7 +633,7 @@ export default function App() {
                 });
               }
             })
-            .catch(() => {});
+            .catch(() => { });
         }
       }
     );
@@ -757,7 +757,7 @@ export default function App() {
             });
           }
         })
-        .catch(() => {});
+        .catch(() => { });
 
       if (activeTab === 'loans') {
         dbFetchLoans(currentCircleId)
@@ -773,7 +773,7 @@ export default function App() {
               });
             }
           })
-          .catch(() => {});
+          .catch(() => { });
       }
 
       // Always poll goals so members receive admin-added goals immediately
@@ -792,7 +792,7 @@ export default function App() {
             });
           }
         })
-        .catch(() => {});
+        .catch(() => { });
 
       // Poll tours so members receive admin-created tour proposals immediately without refresh
       dbFetchTours(currentCircleId)
@@ -823,7 +823,7 @@ export default function App() {
             });
           }
         })
-        .catch(() => {});
+        .catch(() => { });
 
       // Poll expenses so members receive new expenses immediately without manual refresh
       dbFetchExpenses(currentCircleId)
@@ -853,7 +853,7 @@ export default function App() {
             });
           }
         })
-        .catch(() => {});
+        .catch(() => { });
 
       // Poll contributions so member payment records update in real time without refreshing
       dbFetchContributions(currentCircleId)
@@ -884,7 +884,7 @@ export default function App() {
             });
           }
         })
-        .catch(() => {});
+        .catch(() => { });
 
       // Poll transactions so Dashboard metrics (Current Fund, Total Expenses) update live on all tabs
       dbFetchTransactions(currentCircleId)
@@ -908,7 +908,7 @@ export default function App() {
             });
           }
         })
-        .catch(() => {});
+        .catch(() => { });
 
       if (activeTab === 'profile') {
         dbFetchMembers(currentCircleId)
@@ -920,7 +920,7 @@ export default function App() {
               });
             }
           })
-          .catch(() => {});
+          .catch(() => { });
       }
     }, 1500);
 
@@ -943,7 +943,7 @@ export default function App() {
     setCurrentUser(adminUser);
     try {
       localStorage.setItem('buddyfund_current_user', JSON.stringify(adminUser));
-    } catch {}
+    } catch { }
     showToast('Welcome, Circle Admin! Full management access granted.');
   };
 
@@ -952,7 +952,7 @@ export default function App() {
     setCurrentUser(memberUser);
     try {
       localStorage.setItem('buddyfund_current_user', JSON.stringify(memberUser));
-    } catch {}
+    } catch { }
     setActiveTab('dashboard');
     showToast(`Welcome, ${memberUser.name}! Signed in as Squad Member.`);
   };
@@ -1050,7 +1050,7 @@ export default function App() {
     setCurrentUser(adminUser);
     try {
       localStorage.setItem('buddyfund_current_user', JSON.stringify(adminUser));
-    } catch {}
+    } catch { }
     showToast(`Circle "${circleData.name}" created! Welcome, ${adminName}.`);
   };
 
@@ -1058,7 +1058,7 @@ export default function App() {
     setCurrentUser(null);
     try {
       localStorage.removeItem('buddyfund_current_user');
-    } catch {}
+    } catch { }
     showToast('Signed out of Ithanu_njangal.');
   };
 
@@ -1074,7 +1074,7 @@ export default function App() {
       setCurrentUser(targetUser);
       try {
         localStorage.setItem('buddyfund_current_user', JSON.stringify(targetUser));
-      } catch {}
+      } catch { }
       showToast(`Logged in as ${targetUser.name} (${targetUser.role.replace('_', ' ')})`);
     }
   };
@@ -1138,42 +1138,42 @@ export default function App() {
     const existing = data.recordId
       ? contributions.find((c) => c.id === data.recordId)
       : contributions.find(
-          (c) =>
-            c.circleId === currentCircle.id &&
-            (c.userId === data.userId || (member && c.userId === member.userId)) &&
-            (c.dueDate === dateStr || (data.weekNumber && c.weekNumber === data.weekNumber))
-        );
+        (c) =>
+          c.circleId === currentCircle.id &&
+          (c.userId === data.userId || (member && c.userId === member.userId)) &&
+          (c.dueDate === dateStr || (data.weekNumber && c.weekNumber === data.weekNumber))
+      );
 
     const recordToSave: ContributionRecord = existing
       ? {
-          ...existing,
-          userName: memberName,
-          amount: data.amount,
-          paidAmount: data.amount,
-          status: data.status,
-          paymentMethod: data.paymentMethod,
-          referenceNote: data.referenceNote,
-          dueDate: dateStr,
-          paidDate: dateStr,
-          weekLabel: formattedDate,
-          recordedBy: currentUser.name,
-        }
+        ...existing,
+        userName: memberName,
+        amount: data.amount,
+        paidAmount: data.amount,
+        status: data.status,
+        paymentMethod: data.paymentMethod,
+        referenceNote: data.referenceNote,
+        dueDate: dateStr,
+        paidDate: dateStr,
+        weekLabel: formattedDate,
+        recordedBy: currentUser.name,
+      }
       : {
-          id: targetId,
-          circleId: currentCircle.id,
-          userId: data.userId,
-          userName: memberName,
-          weekNumber: data.weekNumber || 1,
-          weekLabel: formattedDate,
-          dueDate: dateStr,
-          amount: data.amount,
-          paidAmount: data.amount,
-          status: data.status,
-          paidDate: dateStr,
-          paymentMethod: data.paymentMethod,
-          referenceNote: data.referenceNote,
-          recordedBy: currentUser.name,
-        };
+        id: targetId,
+        circleId: currentCircle.id,
+        userId: data.userId,
+        userName: memberName,
+        weekNumber: data.weekNumber || 1,
+        weekLabel: formattedDate,
+        dueDate: dateStr,
+        amount: data.amount,
+        paidAmount: data.amount,
+        status: data.status,
+        paidDate: dateStr,
+        paymentMethod: data.paymentMethod,
+        referenceNote: data.referenceNote,
+        recordedBy: currentUser.name,
+      };
 
     // Update state & storage
     setContributions((prev) => {
@@ -1439,10 +1439,10 @@ export default function App() {
       prev.map((m) =>
         (m.userId === record.userId || m.id === record.userId) && m.circleId === currentCircle.id
           ? {
-              ...m,
-              totalContributed: m.totalContributed + record.amount,
-              pendingContribution: Math.max(0, m.pendingContribution - record.amount),
-            }
+            ...m,
+            totalContributed: m.totalContributed + record.amount,
+            pendingContribution: Math.max(0, m.pendingContribution - record.amount),
+          }
           : m
       )
     );
@@ -1696,27 +1696,27 @@ export default function App() {
       weeklyEmiAmount: isWeekly ? weeklyEmi : undefined,
       installments: isWeekly
         ? Array.from({ length: tenureWeeks }).map((_, i) => ({
-            installmentNumber: i + 1,
-            dueDate: new Date(Date.now() + (i + 1) * 7 * 24 * 60 * 60 * 1000)
-              .toISOString()
-              .split('T')[0],
-            principalAmount: Math.round(data.principal / tenureWeeks),
-            interestAmount: Math.round(totalInterest / tenureWeeks),
-            totalDue: weeklyEmi,
-            paidAmount: 0,
-            status: 'Pending',
-          }))
+          installmentNumber: i + 1,
+          dueDate: new Date(Date.now() + (i + 1) * 7 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split('T')[0],
+          principalAmount: Math.round(data.principal / tenureWeeks),
+          interestAmount: Math.round(totalInterest / tenureWeeks),
+          totalDue: weeklyEmi,
+          paidAmount: 0,
+          status: 'Pending',
+        }))
         : Array.from({ length: Math.max(1, Math.ceil(cycleDays / 10)) }).map((_, i) => ({
-            installmentNumber: i + 1,
-            dueDate: new Date(Date.now() + (i + 1) * 10 * 24 * 60 * 60 * 1000)
-              .toISOString()
-              .split('T')[0],
-            principalAmount: 0,
-            interestAmount: periodicInterest,
-            totalDue: periodicInterest,
-            paidAmount: 0,
-            status: 'Pending',
-          })),
+          installmentNumber: i + 1,
+          dueDate: new Date(Date.now() + (i + 1) * 10 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split('T')[0],
+          principalAmount: 0,
+          interestAmount: periodicInterest,
+          totalDue: periodicInterest,
+          paidAmount: 0,
+          status: 'Pending',
+        })),
     };
 
     setLoans((prev) => [newLoan, ...prev]);
@@ -1802,8 +1802,7 @@ export default function App() {
         );
       } else {
         showToast(
-          `Approval recorded (${memberApprovalsCount}/${requiredMemberApprovals} member approvals, Admin: ${
-            hasAdminApproved ? 'Approved' : 'Pending'
+          `Approval recorded (${memberApprovalsCount}/${requiredMemberApprovals} member approvals, Admin: ${hasAdminApproved ? 'Approved' : 'Pending'
           }).`
         );
       }
@@ -1837,8 +1836,7 @@ export default function App() {
 
     if (!hasAdminApproved || memberApprovalsCount < requiredMemberApprovals) {
       showToast(
-        `Cannot provide loan: Requires 1 Circle Admin approval AND minimum ${requiredMemberApprovals} member approvals (${memberApprovalsCount}/${requiredMemberApprovals} members approved, Admin: ${
-          hasAdminApproved ? '✓' : 'Pending'
+        `Cannot provide loan: Requires 1 Circle Admin approval AND minimum ${requiredMemberApprovals} member approvals (${memberApprovalsCount}/${requiredMemberApprovals} members approved, Admin: ${hasAdminApproved ? '✓' : 'Pending'
         }).`
       );
       return;
@@ -2401,7 +2399,7 @@ export default function App() {
     setCurrentUser(updatedUser);
     try {
       localStorage.setItem('buddyfund_current_user', JSON.stringify(updatedUser));
-    } catch {}
+    } catch { }
 
     // 2. Update users roster
     setUsers((prev) => {
@@ -2962,21 +2960,20 @@ export default function App() {
               ]
                 .filter((item) => currentUser.role !== 'member' || !['ledger', 'reports', 'audit'].includes(item.id))
                 .map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    handleNavigateTab(item.id);
-                    setShowMobileMoreMenu(false);
-                  }}
-                  className={`p-3 rounded-xl border text-left font-medium transition ${
-                    activeTab === item.id
-                      ? 'border-emerald-500 bg-emerald-50 text-emerald-800 font-bold'
-                      : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      handleNavigateTab(item.id);
+                      setShowMobileMoreMenu(false);
+                    }}
+                    className={`p-3 rounded-xl border text-left font-medium transition ${activeTab === item.id
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-800 font-bold'
+                        : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+                      }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
 
               {currentUser.role === 'super_admin' && (
                 <button
