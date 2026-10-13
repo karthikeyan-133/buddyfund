@@ -12,6 +12,7 @@ import {
   Check,
   X,
   Edit3,
+  QrCode,
 } from 'lucide-react';
 import { Circle } from '../../types';
 
@@ -38,6 +39,8 @@ export const EditCircleModal: React.FC<EditCircleModalProps> = ({
   const [showSecretCode, setShowSecretCode] = useState(false);
   const [adminName, setAdminName] = useState('');
   const [adminPhotoUrl, setAdminPhotoUrl] = useState('');
+  const [adminUpiId, setAdminUpiId] = useState('');
+  const [adminQrCodeUrl, setAdminQrCodeUrl] = useState('');
   const [showCustomUrlInput, setShowCustomUrlInput] = useState(false);
   const [customPhotoInput, setCustomPhotoInput] = useState('');
 
@@ -53,6 +56,8 @@ export const EditCircleModal: React.FC<EditCircleModalProps> = ({
       setSecretCode(circle.adminSecretCode || 'ADMIN2026');
       setAdminName(circle.adminName || '');
       setAdminPhotoUrl(circle.adminPhotoUrl || '');
+      setAdminUpiId(circle.adminUpiId || '');
+      setAdminQrCodeUrl(circle.adminQrCodeUrl || '');
       setShowCustomUrlInput(false);
       setCustomPhotoInput('');
     }
@@ -67,6 +72,18 @@ export const EditCircleModal: React.FC<EditCircleModalProps> = ({
     reader.onload = () => {
       if (typeof reader.result === 'string') {
         setAdminPhotoUrl(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAdminQrUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setAdminQrCodeUrl(reader.result);
       }
     };
     reader.readAsDataURL(file);
@@ -87,6 +104,8 @@ export const EditCircleModal: React.FC<EditCircleModalProps> = ({
       adminSecretCode: secretCode.trim() || circle.adminSecretCode || 'ADMIN2026',
       adminName: adminName.trim() || circle.adminName,
       adminPhotoUrl: adminPhotoUrl.trim() || circle.adminPhotoUrl,
+      adminUpiId: adminUpiId.trim() || undefined,
+      adminQrCodeUrl: adminQrCodeUrl.trim() || undefined,
     };
 
     onSave(updated);
@@ -306,6 +325,79 @@ export const EditCircleModal: React.FC<EditCircleModalProps> = ({
                     Set
                   </button>
                 </div>
+              )}
+            </div>
+          </div>
+
+          {/* Circle Admin UPI Details for Online Payments */}
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <QrCode className="w-4 h-4 text-emerald-600" />
+                <span className="text-xs font-bold text-slate-800">UPI Payment & QR Settings</span>
+              </div>
+              <span className="text-[11px] text-emerald-600 font-medium">For Member Weekly Savings</span>
+            </div>
+
+            <div>
+              <label className="block text-slate-700 font-medium mb-1 text-xs">
+                Admin UPI ID (VPA)
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. karthik@upi, 9876543210@paytm, or username@okhdfcbank"
+                value={adminUpiId}
+                onChange={(e) => setAdminUpiId(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-900 font-mono text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+              />
+              <p className="text-[11px] text-slate-500 mt-1">
+                Members paying via UPI will see a dynamic QR code pre-filled with this UPI ID and the savings amount ({circle.currencySymbol || '₹'}{amount}).
+              </p>
+            </div>
+
+            {/* Optional Custom QR Code Upload */}
+            <div className="pt-2 border-t border-slate-200/60">
+              <div className="flex items-center justify-between text-xs mb-1.5">
+                <span className="font-medium text-slate-700">Custom QR Code Image (Optional):</span>
+                <label
+                  htmlFor="edit-modal-admin-qr-btn"
+                  className="text-emerald-600 hover:text-emerald-700 cursor-pointer flex items-center gap-1 font-semibold text-xs"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>{adminQrCodeUrl ? 'Change QR' : 'Upload QR Photo'}</span>
+                </label>
+                <input
+                  id="edit-modal-admin-qr-btn"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAdminQrUpload}
+                  className="hidden"
+                />
+              </div>
+
+              {adminQrCodeUrl ? (
+                <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
+                  <img
+                    src={adminQrCodeUrl}
+                    alt="Custom Admin QR"
+                    className="w-12 h-12 object-contain rounded border border-slate-200"
+                  />
+                  <div className="flex-1 truncate">
+                    <span className="text-xs font-semibold text-slate-800 block">Custom QR Loaded</span>
+                    <span className="text-[10px] text-emerald-600 font-medium">Displayed to members</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAdminQrCodeUrl('')}
+                    className="text-xs text-rose-600 hover:text-rose-700 font-semibold px-2 py-1"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <p className="text-[11px] text-slate-500">
+                  By default, a dynamic UPI QR code is generated automatically from your UPI ID. You can optionally upload your GPay/PhonePe scanner photo here.
+                </p>
               )}
             </div>
           </div>

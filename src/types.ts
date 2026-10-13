@@ -37,6 +37,7 @@ export interface Circle {
   adminName?: string;
   adminPhotoUrl?: string;
   adminUpiId?: string;
+  adminQrCodeUrl?: string;
   adminPhone?: string;
 }
 

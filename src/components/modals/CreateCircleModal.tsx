@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, Sparkles, Calendar, DollarSign, Camera, Upload, UserCheck } from 'lucide-react';
+import { Users, Sparkles, Calendar, DollarSign, Camera, Upload, UserCheck, QrCode } from 'lucide-react';
 
 const DEFAULT_ADMIN_AVATAR =
   'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80';
@@ -16,6 +16,7 @@ interface CreateCircleModalProps {
     adminSecretCode?: string;
     adminName?: string;
     adminPhotoUrl?: string;
+    adminUpiId?: string;
   }) => void;
   defaultAdminName?: string;
   defaultAdminPhotoUrl?: string;
@@ -36,6 +37,7 @@ export const CreateCircleModal: React.FC<CreateCircleModalProps> = ({
   const [secretCode, setSecretCode] = useState('');
   const [adminName, setAdminName] = useState(defaultAdminName || '');
   const [adminPhotoUrl, setAdminPhotoUrl] = useState(defaultAdminPhotoUrl || DEFAULT_ADMIN_AVATAR);
+  const [adminUpiId, setAdminUpiId] = useState('');
   const [showCustomUrlInput, setShowCustomUrlInput] = useState(false);
   const [customPhotoInput, setCustomPhotoInput] = useState('');
 
@@ -65,6 +67,7 @@ export const CreateCircleModal: React.FC<CreateCircleModalProps> = ({
       adminSecretCode: secretCode || 'ADMIN2026',
       adminName: adminName.trim() || undefined,
       adminPhotoUrl: adminPhotoUrl || undefined,
+      adminUpiId: adminUpiId.trim() || undefined,
     });
     onClose();
   };
@@ -254,6 +257,27 @@ export const CreateCircleModal: React.FC<CreateCircleModalProps> = ({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Circle Admin UPI ID for Online Payments */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-slate-700 font-medium">Circle Admin UPI ID (Optional)</label>
+              <span className="text-[11px] text-emerald-600 font-medium">For Online Savings Payments</span>
+            </div>
+            <div className="relative">
+              <QrCode className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              <input
+                type="text"
+                placeholder="e.g. karthik@upi, 9876543210@paytm, or name@okhdfcbank"
+                value={adminUpiId}
+                onChange={(e) => setAdminUpiId(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-slate-900 font-mono text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Members paying weekly savings online via UPI will see a dynamic QR code pre-filled with this UPI ID and amount.
+            </p>
           </div>
 
           <div>

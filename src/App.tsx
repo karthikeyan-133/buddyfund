@@ -2203,6 +2203,7 @@ export default function App() {
     adminSecretCode?: string;
     adminName?: string;
     adminPhotoUrl?: string;
+    adminUpiId?: string;
   }) => {
     const newCircleId = `circle-${Date.now()}`;
     const adminName = data.adminName?.trim() || currentUser?.name || 'Circle Admin';
@@ -2235,6 +2236,7 @@ export default function App() {
       adminSecretCode: data.adminSecretCode || 'ADMIN2026',
       adminName: adminName,
       adminPhotoUrl: adminPhotoUrl,
+      adminUpiId: data.adminUpiId?.trim() || undefined,
     };
 
     setCircles((prev) => [...prev, newCircle]);
