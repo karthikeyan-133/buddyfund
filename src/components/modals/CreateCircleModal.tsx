@@ -13,6 +13,7 @@ interface CreateCircleModalProps {
     contributionAmount: number;
     contributionFrequency: 'weekly' | 'monthly';
     contributionDay: string;
+    startDate?: string;
     adminSecretCode?: string;
     adminName?: string;
     adminPhotoUrl?: string;
@@ -29,11 +30,18 @@ export const CreateCircleModal: React.FC<CreateCircleModalProps> = ({
   defaultAdminName,
   defaultAdminPhotoUrl,
 }) => {
+  const tomorrowDateStr = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  };
+
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState(500);
   const [frequency, setFrequency] = useState<'weekly' | 'monthly'>('weekly');
-  const [day, setDay] = useState('Sunday');
+  const [day, setDay] = useState('Wednesday');
+  const [startDate, setStartDate] = useState(tomorrowDateStr());
   const [secretCode, setSecretCode] = useState('');
   const [adminName, setAdminName] = useState(defaultAdminName || '');
   const [adminPhotoUrl, setAdminPhotoUrl] = useState(defaultAdminPhotoUrl || DEFAULT_ADMIN_AVATAR);
@@ -64,6 +72,7 @@ export const CreateCircleModal: React.FC<CreateCircleModalProps> = ({
       contributionAmount: Number(amount),
       contributionFrequency: frequency,
       contributionDay: day,
+      startDate: startDate || tomorrowDateStr(),
       adminSecretCode: secretCode || 'ADMIN2026',
       adminName: adminName.trim() || undefined,
       adminPhotoUrl: adminPhotoUrl || undefined,
@@ -145,18 +154,40 @@ export const CreateCircleModal: React.FC<CreateCircleModalProps> = ({
             </div>
           </div>
 
-          <div>
-            <label className="block text-slate-700 font-medium mb-1">Collection Day</label>
-            <select
-              value={day}
-              onChange={(e) => setDay(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-            >
-              <option value="Sunday">Sunday</option>
-              <option value="Saturday">Saturday</option>
-              <option value="Friday">Friday</option>
-              <option value="1st of Month">1st of Month</option>
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-slate-700 font-medium">Collection Day</label>
+                <span className="text-[11px] text-emerald-600 font-bold">Starts Wednesday!</span>
+              </div>
+              <select
+                value={day}
+                onChange={(e) => setDay(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+              >
+                <option value="Wednesday">Wednesday (Starts Tomorrow!)</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+                <option value="Sunday">Sunday</option>
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="1st of Month">1st of Month</option>
+              </select>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-slate-700 font-medium">First Collection Date</label>
+                <span className="text-[11px] text-emerald-600 font-bold">Tomorrow ({startDate})</span>
+              </div>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+              />
+            </div>
           </div>
 
           {/* Circle Admin Profile (Name & Photo) */}

@@ -84,14 +84,22 @@ export const SavingsTab: React.FC<SavingsTabProps> = ({
   // Resolve current active cycle due date from circle configuration
   const currentDueDate = React.useMemo(() => {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const targetDayIndex = days.indexOf(circle.contributionDay || 'Sunday');
+    const targetDay = circle.contributionDay || 'Wednesday';
+    const targetDayIndex = days.indexOf(targetDay);
     const now = new Date();
-    const currentDayIndex = now.getDay();
-    let diff = (targetDayIndex - currentDayIndex + 7) % 7;
-    const targetDate = new Date(now);
-    targetDate.setDate(now.getDate() + diff);
-    return targetDate.toISOString().split('T')[0];
-  }, [circle.contributionDay]);
+    const todayStr = now.toISOString().split('T')[0];
+    if (circle.startDate && circle.startDate >= todayStr) {
+      return circle.startDate;
+    }
+    if (targetDayIndex !== -1) {
+      const currentDayIndex = now.getDay();
+      let diff = (targetDayIndex - currentDayIndex + 7) % 7;
+      const targetDate = new Date(now);
+      targetDate.setDate(now.getDate() + diff);
+      return targetDate.toISOString().split('T')[0];
+    }
+    return circle.startDate || todayStr;
+  }, [circle.contributionDay, circle.startDate]);
 
   const formattedCurrentDueDate = React.useMemo(() => {
     try {

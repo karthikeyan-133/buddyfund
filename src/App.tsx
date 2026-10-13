@@ -411,13 +411,22 @@ export default function App() {
     if (existing) return existing;
 
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const targetDayIndex = days.indexOf(currentCircle.contributionDay || 'Sunday');
+    const targetDay = currentCircle.contributionDay || 'Wednesday';
+    const targetDayIndex = days.indexOf(targetDay);
     const now = new Date();
-    const currentDayIndex = now.getDay();
-    let diff = (targetDayIndex - currentDayIndex + 7) % 7;
-    const targetDate = new Date(now);
-    targetDate.setDate(now.getDate() + diff);
-    const dateStr = targetDate.toISOString().split('T')[0];
+    const todayStr = now.toISOString().split('T')[0];
+    let dateStr = '';
+    if (currentCircle.startDate && currentCircle.startDate >= todayStr) {
+      dateStr = currentCircle.startDate;
+    } else if (targetDayIndex !== -1) {
+      const currentDayIndex = now.getDay();
+      let diff = (targetDayIndex - currentDayIndex + 7) % 7;
+      const targetDate = new Date(now);
+      targetDate.setDate(now.getDate() + diff);
+      dateStr = targetDate.toISOString().split('T')[0];
+    } else {
+      dateStr = todayStr;
+    }
 
     return {
       id: `sched-${currentCircle.id}-${currentUser.id}-${dateStr}`,
@@ -964,6 +973,12 @@ export default function App() {
       circleData.adminPhotoUrl ||
       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
 
+    const tomorrowStr = (() => {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      return d.toISOString().split('T')[0];
+    })();
+
     const newCircle: Circle = {
       id: newCircleId,
       name: circleData.name,
@@ -973,11 +988,11 @@ export default function App() {
       currencySymbol: '₹',
       contributionFrequency: circleData.contributionFrequency,
       contributionAmount: circleData.contributionAmount,
-      contributionDay: circleData.contributionDay,
-      startDate: new Date().toISOString().split('T')[0],
+      contributionDay: circleData.contributionDay || 'Wednesday',
+      startDate: tomorrowStr,
       expectedMembers: 10,
       rules: [
-        `Every member contributes ₹${circleData.contributionAmount} ${circleData.contributionFrequency} on ${circleData.contributionDay}.`,
+        `Every member contributes ₹${circleData.contributionAmount} ${circleData.contributionFrequency} on ${circleData.contributionDay || 'Wednesday'}.`,
       ],
       createdBy: adminName,
       createdAt: new Date().toISOString(),
@@ -2203,6 +2218,7 @@ export default function App() {
     contributionAmount: number;
     contributionFrequency: 'weekly' | 'monthly';
     contributionDay: string;
+    startDate?: string;
     adminSecretCode?: string;
     adminName?: string;
     adminPhotoUrl?: string;
@@ -2215,6 +2231,12 @@ export default function App() {
       currentUser?.avatarUrl ||
       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
 
+    const tomorrowStr = (() => {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      return d.toISOString().split('T')[0];
+    })();
+
     const newCircle: Circle = {
       id: newCircleId,
       name: data.name,
@@ -2225,11 +2247,11 @@ export default function App() {
       currencySymbol: '₹',
       contributionFrequency: data.contributionFrequency,
       contributionAmount: data.contributionAmount,
-      contributionDay: data.contributionDay,
-      startDate: new Date().toISOString().split('T')[0],
+      contributionDay: data.contributionDay || 'Wednesday',
+      startDate: data.startDate || tomorrowStr,
       expectedMembers: 10,
       rules: [
-        `Every member contributes ₹${data.contributionAmount} ${data.contributionFrequency} on ${data.contributionDay}.`,
+        `Every member contributes ₹${data.contributionAmount} ${data.contributionFrequency} on ${data.contributionDay || 'Wednesday'}.`,
         'All tour expenses and major disbursements require consensus voting.',
       ],
       createdBy: adminName,

@@ -44,6 +44,14 @@ export const EditCircleModal: React.FC<EditCircleModalProps> = ({
   const [showCustomUrlInput, setShowCustomUrlInput] = useState(false);
   const [customPhotoInput, setCustomPhotoInput] = useState('');
 
+  const tomorrowDateStr = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  };
+
+  const [startDate, setStartDate] = useState(tomorrowDateStr());
+
   // Sync state whenever circle changes or modal opens
   useEffect(() => {
     if (circle) {
@@ -51,7 +59,8 @@ export const EditCircleModal: React.FC<EditCircleModalProps> = ({
       setDescription(circle.description || '');
       setAmount(circle.contributionAmount || 500);
       setFrequency(circle.contributionFrequency || 'weekly');
-      setDay(circle.contributionDay || 'Sunday');
+      setDay(circle.contributionDay || 'Wednesday');
+      setStartDate(circle.startDate || tomorrowDateStr());
       setExpectedMembers(circle.expectedMembers || 10);
       setSecretCode(circle.adminSecretCode || 'ADMIN2026');
       setAdminName(circle.adminName || '');
@@ -100,6 +109,7 @@ export const EditCircleModal: React.FC<EditCircleModalProps> = ({
       contributionAmount: Number(amount),
       contributionFrequency: frequency,
       contributionDay: day,
+      startDate: startDate || circle.startDate || tomorrowDateStr(),
       expectedMembers: Number(expectedMembers),
       adminSecretCode: secretCode.trim() || circle.adminSecretCode || 'ADMIN2026',
       adminName: adminName.trim() || circle.adminName,
@@ -193,18 +203,24 @@ export const EditCircleModal: React.FC<EditCircleModalProps> = ({
           </div>
 
           {/* Collection Day & Expected Members */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-700 font-medium mb-1">Collection Day</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-slate-700 font-medium">Collection Day</label>
+                <span className="text-[11px] text-emerald-600 font-bold">Starts Wednesday</span>
+              </div>
               <select
                 value={day}
                 onChange={(e) => setDay(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-medium"
               >
-                <option value="Sunday">Sunday</option>
-                <option value="Saturday">Saturday</option>
+                <option value="Wednesday">Wednesday (Starts Tomorrow!)</option>
+                <option value="Thursday">Thursday</option>
                 <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+                <option value="Sunday">Sunday</option>
                 <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
                 <option value="1st of Month">1st of Month</option>
               </select>
             </div>
@@ -221,6 +237,23 @@ export const EditCircleModal: React.FC<EditCircleModalProps> = ({
                 required
               />
             </div>
+          </div>
+
+          {/* First Collection / Start Date */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-slate-700 font-medium">First Collection / Start Date</label>
+              <span className="text-[11px] text-emerald-600 font-bold">Tomorrow ({startDate})</span>
+            </div>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium bg-white"
+            />
+            <p className="text-[11px] text-slate-400 mt-1">
+              Scheduled start date for first collection cycle (Wednesday, {startDate})
+            </p>
           </div>
 
           {/* Circle Admin Profile (Name & Photo) */}

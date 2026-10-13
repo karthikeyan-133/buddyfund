@@ -61,6 +61,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [newCircleDescription, setNewCircleDescription] = useState('');
   const [newCircleAmount, setNewCircleAmount] = useState(500);
   const [newCircleFrequency, setNewCircleFrequency] = useState<'weekly' | 'monthly'>('weekly');
+  const [newCircleDay, setNewCircleDay] = useState('Wednesday');
   const [newAdminName, setNewAdminName] = useState('');
   const [newAdminPhotoUrl, setNewAdminPhotoUrl] = useState('');
   const [newCircleSecretCode, setNewCircleSecretCode] = useState('');
@@ -123,7 +124,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         description: newCircleDescription.trim(),
         contributionAmount: Number(newCircleAmount),
         contributionFrequency: newCircleFrequency,
-        contributionDay: 'Sunday',
+        contributionDay: newCircleDay || 'Wednesday',
         adminSecretCode: newCircleSecretCode.trim(),
         adminName: newAdminName.trim() || undefined,
         adminPhotoUrl: newAdminPhotoUrl || undefined,
@@ -440,9 +441,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <div>
-                      <label className="block text-slate-300 font-medium mb-1 text-xs">Amount per Member (₹)</label>
+                      <label className="block text-slate-300 font-medium mb-1 text-xs">Amount (₹)</label>
                       <input
                         type="number"
                         min="50"
@@ -462,6 +463,23 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                       >
                         <option value="weekly">Weekly</option>
                         <option value="monthly">Monthly</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-300 font-medium mb-1 text-xs">Collection Day</label>
+                      <select
+                        value={newCircleDay}
+                        onChange={(e) => setNewCircleDay(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-medium"
+                      >
+                        <option value="Wednesday">Wednesday (Tomorrow)</option>
+                        <option value="Thursday">Thursday</option>
+                        <option value="Friday">Friday</option>
+                        <option value="Saturday">Saturday</option>
+                        <option value="Sunday">Sunday</option>
+                        <option value="Monday">Monday</option>
+                        <option value="Tuesday">Tuesday</option>
+                        <option value="1st of Month">1st of Month</option>
                       </select>
                     </div>
                   </div>

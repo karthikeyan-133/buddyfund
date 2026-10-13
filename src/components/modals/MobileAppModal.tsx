@@ -53,9 +53,11 @@ export const MobileAppModal: React.FC<MobileAppModalProps> = ({ isOpen, onClose 
         </button>
 
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30">
-            <Smartphone className="w-6 h-6" />
-          </div>
+          <img
+            src="/app-icon.png"
+            alt="BuddyFund App Icon"
+            className="w-13 h-13 rounded-2xl object-cover shadow-lg border border-emerald-500/20 shadow-emerald-500/10 flex-shrink-0"
+          />
           <div>
             <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
               BuddyFund Mobile App
