@@ -40,6 +40,7 @@ export interface Circle {
   adminUpiId?: string;
   adminQrCodeUrl?: string;
   adminPhone?: string;
+  adminEmail?: string;
 }
 
 export interface CircleMember {

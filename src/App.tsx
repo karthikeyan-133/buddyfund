@@ -459,6 +459,41 @@ export default function App() {
     dbFetchMembers(currentCircleId).then((m) => {
       if (m && m.length > 0) {
         setMembers((prev) => [...m, ...prev.filter((x) => x.circleId !== currentCircleId)]);
+
+        // Sync currentUser if database record has real dob, phone, or email
+        setCurrentUser((prevUser) => {
+          if (!prevUser) return prevUser;
+          const matching = m.find(
+            (x) =>
+              x.circleId === currentCircleId &&
+              (x.userId === prevUser.id ||
+                x.id === prevUser.id ||
+                (prevUser.role === 'circle_admin' && x.role === 'circle_admin') ||
+                (prevUser.phone && x.phone && x.phone.replace(/\D/g, '') === prevUser.phone.replace(/\D/g, '')) ||
+                (prevUser.name && x.name && x.name.trim().toLowerCase() === prevUser.name.trim().toLowerCase()))
+          );
+          if (!matching) return prevUser;
+
+          const isMockEmail = !prevUser.email || prevUser.email.includes('admin@buddyfund.local') || prevUser.email.includes('@buddyfund.local');
+          const isMockPhone = !prevUser.phone || prevUser.phone.includes('98401 00000');
+          const freshEmail = (!isMockEmail && prevUser.email) ? prevUser.email : (matching.email || prevUser.email);
+          const freshPhone = (!isMockPhone && prevUser.phone) ? prevUser.phone : (matching.phone || prevUser.phone);
+          const freshDob = matching.dob || prevUser.dob;
+
+          if (prevUser.dob !== freshDob || prevUser.email !== freshEmail || prevUser.phone !== freshPhone) {
+            const updated = {
+              ...prevUser,
+              dob: freshDob,
+              email: freshEmail,
+              phone: freshPhone,
+            };
+            try {
+              localStorage.setItem('buddyfund_current_user', JSON.stringify(updated));
+            } catch {}
+            return updated;
+          }
+          return prevUser;
+        });
       }
     });
     dbFetchContributions(currentCircleId).then((c) => {
@@ -918,6 +953,41 @@ export default function App() {
                 const others = prev.filter((m) => m.circleId !== currentCircleId);
                 return [...latestMembers, ...others];
               });
+
+              // Keep currentUser in sync with database profile
+              setCurrentUser((prevUser) => {
+                if (!prevUser) return prevUser;
+                const matching = latestMembers.find(
+                  (x) =>
+                    x.circleId === currentCircleId &&
+                    (x.userId === prevUser.id ||
+                      x.id === prevUser.id ||
+                      (prevUser.role === 'circle_admin' && x.role === 'circle_admin') ||
+                      (prevUser.phone && x.phone && x.phone.replace(/\D/g, '') === prevUser.phone.replace(/\D/g, '')) ||
+                      (prevUser.name && x.name && x.name.trim().toLowerCase() === prevUser.name.trim().toLowerCase()))
+                );
+                if (!matching) return prevUser;
+
+                const isMockEmail = !prevUser.email || prevUser.email.includes('admin@buddyfund.local') || prevUser.email.includes('@buddyfund.local');
+                const isMockPhone = !prevUser.phone || prevUser.phone.includes('98401 00000');
+                const freshEmail = (!isMockEmail && prevUser.email) ? prevUser.email : (matching.email || prevUser.email);
+                const freshPhone = (!isMockPhone && prevUser.phone) ? prevUser.phone : (matching.phone || prevUser.phone);
+                const freshDob = matching.dob || prevUser.dob;
+
+                if (prevUser.dob !== freshDob || prevUser.email !== freshEmail || prevUser.phone !== freshPhone) {
+                  const updated = {
+                    ...prevUser,
+                    dob: freshDob,
+                    email: freshEmail,
+                    phone: freshPhone,
+                  };
+                  try {
+                    localStorage.setItem('buddyfund_current_user', JSON.stringify(updated));
+                  } catch {}
+                  return updated;
+                }
+                return prevUser;
+              });
             }
           })
           .catch(() => { });
@@ -966,6 +1036,11 @@ export default function App() {
     adminSecretCode: string;
     adminName?: string;
     adminPhotoUrl?: string;
+    adminPhone?: string;
+    adminEmail?: string;
+    adminDob?: string;
+    adminUpiId?: string;
+    adminQrCodeUrl?: string;
   }) => {
     const newCircleId = `circle-${Date.now()}`;
     const adminName = circleData.adminName?.trim() || 'Circle Admin';
@@ -1001,6 +1076,10 @@ export default function App() {
       adminSecretCode: circleData.adminSecretCode,
       adminName: adminName,
       adminPhotoUrl: adminPhotoUrl,
+      adminUpiId: circleData.adminUpiId || '',
+      adminQrCodeUrl: circleData.adminQrCodeUrl || '',
+      adminPhone: circleData.adminPhone || '',
+      adminEmail: circleData.adminEmail || '',
     };
 
     setCircles((prev) => [newCircle, ...prev]);
@@ -1011,14 +1090,15 @@ export default function App() {
     const adminUser: User = {
       id: adminUserId,
       name: adminName,
-      email: 'admin@buddyfund.local',
-      phone: '+91 98401 00000',
+      email: circleData.adminEmail || '',
+      phone: circleData.adminPhone || '',
       avatarUrl: adminPhotoUrl,
       role: 'circle_admin',
       joinedDate: new Date().toISOString().split('T')[0],
       circleIds: [newCircleId],
       isVerified: true,
       status: 'active',
+      dob: circleData.adminDob || undefined,
     };
 
     // Register admin in members directory for this circle
@@ -1027,8 +1107,8 @@ export default function App() {
       userId: adminUserId,
       circleId: newCircleId,
       name: adminName,
-      email: 'admin@buddyfund.local',
-      phone: '+91 98401 00000',
+      email: circleData.adminEmail || '',
+      phone: circleData.adminPhone || '',
       avatarUrl: adminPhotoUrl,
       role: 'circle_admin',
       joinedDate: new Date().toISOString().split('T')[0],
@@ -1037,6 +1117,7 @@ export default function App() {
       pendingContribution: 0,
       outstandingLoan: 0,
       loanRepaymentStatus: 'none',
+      dob: circleData.adminDob || undefined,
     };
 
     setMembers((prev) => [adminMember, ...prev]);
@@ -2221,6 +2302,7 @@ export default function App() {
     adminName?: string;
     adminPhotoUrl?: string;
     adminUpiId?: string;
+    adminQrCodeUrl?: string;
   }) => {
     const newCircleId = `circle-${Date.now()}`;
     const adminName = data.adminName?.trim() || currentUser?.name || 'Circle Admin';
@@ -2260,6 +2342,9 @@ export default function App() {
       adminName: adminName,
       adminPhotoUrl: adminPhotoUrl,
       adminUpiId: data.adminUpiId?.trim() || undefined,
+      adminQrCodeUrl: data.adminQrCodeUrl?.trim() || undefined,
+      adminPhone: (currentUser?.phone && !currentUser.phone.includes('98401 00000')) ? currentUser.phone : undefined,
+      adminEmail: (currentUser?.email && !currentUser.email.includes('admin@buddyfund.local')) ? currentUser.email : undefined,
     };
 
     setCircles((prev) => [...prev, newCircle]);
@@ -2273,8 +2358,8 @@ export default function App() {
       userId: adminUserId,
       circleId: newCircleId,
       name: adminName,
-      email: currentUser?.email || 'admin@buddyfund.local',
-      phone: currentUser?.phone || '+91 98401 00000',
+      email: (currentUser?.email && !currentUser.email.includes('admin@buddyfund.local')) ? currentUser.email : '',
+      phone: (currentUser?.phone && !currentUser.phone.includes('98401 00000')) ? currentUser.phone : '',
       avatarUrl: adminPhotoUrl,
       role: 'circle_admin',
       joinedDate: new Date().toISOString().split('T')[0],
@@ -2283,6 +2368,7 @@ export default function App() {
       pendingContribution: data.contributionAmount,
       outstandingLoan: 0,
       loanRepaymentStatus: 'none',
+      dob: currentUser?.dob || undefined,
     };
     setMembers((prev) => [...prev, newAdminMember]);
     dbUpsertMember(newAdminMember);
@@ -2429,12 +2515,14 @@ export default function App() {
       return next;
     });
 
-    // 4. If user is circle admin, also update circle admin name & photo
+    // 4. If user is circle admin, also update circle admin name, photo, phone & email
     if (currentCircle && (currentUser.role === 'circle_admin' || currentUser.role === 'super_admin')) {
       const updatedCircle: Circle = {
         ...currentCircle,
         adminName: updatedData.name,
         adminPhotoUrl: updatedData.avatarUrl,
+        adminPhone: updatedData.phone,
+        adminEmail: updatedData.email,
       };
       setCircles((prev) => {
         const next = prev.map((c) => (c.id === currentCircle.id ? updatedCircle : c));
@@ -2967,8 +3055,8 @@ export default function App() {
                       setShowMobileMoreMenu(false);
                     }}
                     className={`p-3 rounded-xl border text-left font-medium transition ${activeTab === item.id
-                        ? 'border-emerald-500 bg-emerald-50 text-emerald-800 font-bold'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+                      ? 'border-emerald-500 bg-emerald-50 text-emerald-800 font-bold'
+                      : 'border-slate-200 hover:bg-slate-50 text-slate-700'
                       }`}
                   >
                     {item.label}

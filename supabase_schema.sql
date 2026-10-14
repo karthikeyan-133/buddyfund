@@ -8,6 +8,10 @@
 -- ALTER TABLE users ADD COLUMN IF NOT EXISTS dob date;
 -- ALTER TABLE circles ADD COLUMN IF NOT EXISTS admin_name text default 'Circle Admin';
 -- ALTER TABLE circles ADD COLUMN IF NOT EXISTS admin_photo_url text default '';
+-- ALTER TABLE circles ADD COLUMN IF NOT EXISTS admin_upi_id text default '';
+-- ALTER TABLE circles ADD COLUMN IF NOT EXISTS admin_qr_code_url text default '';
+-- ALTER TABLE circles ADD COLUMN IF NOT EXISTS admin_phone text default '';
+-- ALTER TABLE circles ADD COLUMN IF NOT EXISTS admin_email text default '';
 -- ALTER TABLE votes ADD COLUMN IF NOT EXISTS category text default 'Rule Change';
 -- ALTER TABLE votes ADD COLUMN IF NOT EXISTS threshold_percentage numeric default 60;
 -- ALTER TABLE votes ADD COLUMN IF NOT EXISTS result text default '';
@@ -33,6 +37,10 @@ create table if not exists circles (
   invite_code text default '',
   admin_name text default 'Circle Admin',
   admin_photo_url text default '',
+  admin_upi_id text default '',
+  admin_qr_code_url text default '',
+  admin_phone text default '',
+  admin_email text default '',
   rules jsonb default '[]'::jsonb,
   created_by text default '',
   created_at timestamptz default now()

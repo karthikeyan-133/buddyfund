@@ -157,17 +157,28 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       circle.adminPhotoUrl ||
       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
 
+    const adminEmail =
+      existingAdminMember?.email && !existingAdminMember.email.includes('admin@buddyfund.local')
+        ? existingAdminMember.email
+        : circle.adminEmail || '';
+    const adminPhone =
+      existingAdminMember?.phone && !existingAdminMember.phone.includes('98401 00000')
+        ? existingAdminMember.phone
+        : circle.adminPhone || '';
+    const adminDob = existingAdminMember?.dob || undefined;
+
     const adminUser: User = {
       id: `admin-${circle.id}`,
       name: adminName,
-      email: 'admin@buddyfund.local',
-      phone: '+91 98401 00000',
+      email: adminEmail,
+      phone: adminPhone,
       avatarUrl: adminPhoto,
       role: 'circle_admin',
-      joinedDate: new Date().toISOString().split('T')[0],
+      joinedDate: existingAdminMember?.joinedDate || new Date().toISOString().split('T')[0],
       circleIds: [circle.id],
       isVerified: true,
       status: 'active',
+      dob: adminDob,
     };
 
     onLoginAsAdmin(circle.id, adminUser);
@@ -209,14 +220,15 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     const memberUser: User = {
       id: matchedMember.userId || matchedMember.id,
       name: matchedMember.name,
-      email: matchedMember.email || `${matchedMember.name.toLowerCase().replace(/\s+/g, '')}@buddyfund.local`,
+      email: matchedMember.email || '',
       phone: matchedMember.phone,
-      avatarUrl: matchedMember.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${matchedMember.name}`,
+      avatarUrl: matchedMember.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(matchedMember.name)}`,
       role: 'member',
       joinedDate: matchedMember.joinedDate || new Date().toISOString().split('T')[0],
       circleIds: [matchedMember.circleId],
       isVerified: true,
       status: 'active',
+      dob: matchedMember.dob || undefined,
     };
 
     onLoginAsMember(matchedMember.circleId, memberUser);

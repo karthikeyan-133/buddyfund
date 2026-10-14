@@ -83,19 +83,43 @@ export const MemberProfileView: React.FC<MemberProfileViewProps> = ({
     }
   }, [circle?.id]);
 
-  // Find the matching circle member roster entry for current user
+  // Find the matching circle member roster entry for current user (from Supabase or local state)
   const myMember = useMemo(() => {
     return (
       members.find(
         (m) =>
-          m.userId === currentUser.id ||
-          m.id === currentUser.id ||
-          (m.name && currentUser.name && m.name.trim().toLowerCase() === currentUser.name.trim().toLowerCase()) ||
-          (m.email && currentUser.email && m.email.trim().toLowerCase() === currentUser.email.trim().toLowerCase()) ||
-          (m.phone && currentUser.phone && m.phone.replace(/\D/g, '') === currentUser.phone.replace(/\D/g, ''))
+          (m.circleId === circle.id || !m.circleId) &&
+          (m.userId === currentUser.id ||
+            m.id === currentUser.id ||
+            (currentUser.role === 'circle_admin' && m.role === 'circle_admin') ||
+            (m.name && currentUser.name && m.name.trim().toLowerCase() === currentUser.name.trim().toLowerCase()) ||
+            (m.email && currentUser.email && m.email.trim().toLowerCase() === currentUser.email.trim().toLowerCase()) ||
+            (m.phone && currentUser.phone && m.phone.replace(/\D/g, '') === currentUser.phone.replace(/\D/g, '')))
       ) || null
     );
-  }, [members, currentUser]);
+  }, [members, currentUser, circle.id]);
+
+  // Derive effective user data with live fallback to database member & circle record
+  const effectiveDob = currentUser.dob || myMember?.dob || '';
+  const isMockEmail = !currentUser.email || currentUser.email.includes('admin@buddyfund.local') || currentUser.email.includes('@buddyfund.local');
+  const effectiveEmail = (!isMockEmail && currentUser.email)
+    ? currentUser.email
+    : (myMember?.email || circle.adminEmail || currentUser.email || '');
+  const isMockPhone = !currentUser.phone || currentUser.phone.includes('98401 00000');
+  const effectivePhone = (!isMockPhone && currentUser.phone)
+    ? currentUser.phone
+    : (myMember?.phone || circle.adminPhone || currentUser.phone || '');
+  const effectiveName = currentUser.name || myMember?.name || circle.adminName || '';
+  const effectiveAvatar = currentUser.avatarUrl || myMember?.avatarUrl || circle.adminPhotoUrl || '';
+
+  const effectiveUserForEdit: User = useMemo(() => ({
+    ...currentUser,
+    name: effectiveName,
+    email: effectiveEmail,
+    phone: effectivePhone,
+    dob: effectiveDob,
+    avatarUrl: effectiveAvatar,
+  }), [currentUser, effectiveName, effectiveEmail, effectivePhone, effectiveDob, effectiveAvatar]);
 
   // Combine and deduplicate incoming contributions with directly fetched database records
   const allContributions = useMemo(() => {
@@ -224,8 +248,8 @@ export const MemberProfileView: React.FC<MemberProfileViewProps> = ({
         <div className="flex items-center gap-4">
           <div className="relative group flex-shrink-0">
             <img
-              src={currentUser.avatarUrl}
-              alt={currentUser.name}
+              src={effectiveAvatar}
+              alt={effectiveName}
               className="w-20 h-20 rounded-2xl object-cover border-2 border-emerald-500 shadow-md"
             />
             <button
@@ -240,7 +264,7 @@ export const MemberProfileView: React.FC<MemberProfileViewProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-xl sm:text-2xl font-bold text-slate-900 font-['Space_Grotesk']">
-                {currentUser.name}
+                {effectiveName}
               </h2>
               <span
                 className={`text-[11px] font-bold px-2 py-0.5 rounded-md uppercase ${
@@ -257,20 +281,25 @@ export const MemberProfileView: React.FC<MemberProfileViewProps> = ({
             <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-2">
               <span className="flex items-center gap-1">
                 <Mail className="w-3.5 h-3.5" />
-                {currentUser.email}
+                {effectiveEmail || 'No email set'}
               </span>
               <span className="flex items-center gap-1">
                 <Phone className="w-3.5 h-3.5" />
-                {currentUser.phone}
+                {effectivePhone || 'No phone set'}
               </span>
               <span className="flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5" />
                 Member of {circle.name}
               </span>
-              {currentUser.dob && (
+              {effectiveDob ? (
                 <span className="flex items-center gap-1 text-amber-800 font-semibold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
                   <Cake className="w-3.5 h-3.5 text-amber-600" />
-                  <span>DOB: {formatDobDisplay(currentUser.dob)}</span>
+                  <span>DOB: {formatDobDisplay(effectiveDob)}</span>
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-slate-400 italic">
+                  <Cake className="w-3.5 h-3.5 text-slate-400" />
+                  <span>DOB not set</span>
                 </span>
               )}
             </div>
@@ -292,7 +321,7 @@ export const MemberProfileView: React.FC<MemberProfileViewProps> = ({
       <EditProfileModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        currentUser={currentUser}
+        currentUser={effectiveUserForEdit}
         onSave={(data) => {
           onUpdateProfile?.(data);
         }}

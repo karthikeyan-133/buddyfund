@@ -20,8 +20,10 @@ import {
   X,
   Trash2,
   ExternalLink,
+  Cake,
 } from 'lucide-react';
 import { CircleMember, Circle, User as UserType } from '../types';
+import { formatDobDisplay } from '../utils/birthdayUtils';
 
 interface MembersTabProps {
   circle: Circle;
@@ -277,6 +279,12 @@ export const MembersTab: React.FC<MembersTabProps> = ({
             const hasPending = (member.pendingContribution ?? 0) > 0;
             const hasLoan = (member.outstandingLoan ?? 0) > 0;
             const isUserAdmin = member.role === 'circle_admin';
+            const memberPhone = (isUserAdmin && (member.phone?.includes('98401 00000') || !member.phone))
+              ? (circle.adminPhone || member.phone || '')
+              : (member.phone || '');
+            const memberEmail = (isUserAdmin && (member.email?.includes('admin@buddyfund.local') || !member.email))
+              ? (circle.adminEmail || member.email || '')
+              : (member.email || '');
 
             return (
               <div
@@ -334,25 +342,35 @@ export const MembersTab: React.FC<MembersTabProps> = ({
                   <div className="mt-4 space-y-1.5 text-xs text-slate-600 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
                     <div className="flex items-center justify-between gap-2">
                       <a
-                        href={`tel:${member.phone}`}
+                        href={`tel:${memberPhone}`}
                         className="flex items-center gap-1.5 hover:text-emerald-600 transition truncate"
                       >
                         <Phone className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                        <span className="truncate">{member.phone}</span>
+                        <span className="truncate">{memberPhone || 'No phone'}</span>
                       </a>
-                      <a
-                        href={`https://wa.me/${member.phone.replace(/[^0-9]/g, '')}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[10px] text-emerald-600 hover:underline flex items-center gap-0.5 font-medium flex-shrink-0"
-                      >
-                        <MessageCircle className="w-3 h-3" /> WhatsApp
-                      </a>
+                      {memberPhone && (
+                        <a
+                          href={`https://wa.me/${memberPhone.replace(/[^0-9]/g, '')}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[10px] text-emerald-600 hover:underline flex items-center gap-0.5 font-medium flex-shrink-0"
+                        >
+                          <MessageCircle className="w-3 h-3" /> WhatsApp
+                        </a>
+                      )}
                     </div>
-                    <div className="flex items-center gap-1.5 truncate">
-                      <Mail className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                      <span className="truncate text-slate-500">{member.email}</span>
-                    </div>
+                    {memberEmail && (
+                      <div className="flex items-center gap-1.5 truncate">
+                        <Mail className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                        <span className="truncate text-slate-500">{memberEmail}</span>
+                      </div>
+                    )}
+                    {member.dob && (
+                      <div className="flex items-center gap-1.5 text-[11px] text-amber-800 font-semibold bg-amber-50/80 px-2 py-0.5 rounded border border-amber-200/60">
+                        <Cake className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                        <span>DOB: {formatDobDisplay(member.dob)}</span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
                       <Calendar className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                       <span>Joined {member.joinedDate || 'Sep 2026'}</span>
@@ -456,14 +474,36 @@ export const MembersTab: React.FC<MembersTabProps> = ({
             <div className="space-y-2 text-xs bg-slate-50 p-4 rounded-xl border border-slate-100">
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Mobile Number:</span>
-                <a href={`tel:${inspectMember.phone}`} className="font-semibold text-slate-800 hover:underline">
-                  {inspectMember.phone}
-                </a>
+                {(() => {
+                  const phone = (inspectMember.role === 'circle_admin' && (inspectMember.phone?.includes('98401 00000') || !inspectMember.phone))
+                    ? (circle.adminPhone || inspectMember.phone)
+                    : inspectMember.phone;
+                  return phone ? (
+                    <a href={`tel:${phone}`} className="font-semibold text-slate-800 hover:underline">
+                      {phone}
+                    </a>
+                  ) : (
+                    <span className="text-slate-400 italic">Not set</span>
+                  );
+                })()}
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Email:</span>
-                <span className="font-semibold text-slate-800">{inspectMember.email}</span>
+                <span className="font-semibold text-slate-800">
+                  {(inspectMember.role === 'circle_admin' && (inspectMember.email?.includes('admin@buddyfund.local') || !inspectMember.email))
+                    ? (circle.adminEmail || inspectMember.email || 'Not set')
+                    : (inspectMember.email || 'Not set')}
+                </span>
               </div>
+              {inspectMember.dob && (
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Birthday (DOB):</span>
+                  <span className="font-semibold text-amber-800 flex items-center gap-1">
+                    <Cake className="w-3.5 h-3.5 text-amber-600" />
+                    {formatDobDisplay(inspectMember.dob)}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Weekly Savings Share:</span>
                 <span className="font-semibold text-slate-800">{currency}{circle.contributionAmount}/week</span>

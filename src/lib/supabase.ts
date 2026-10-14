@@ -172,6 +172,10 @@ export async function dbFetchCircles(): Promise<Circle[]> {
         adminSecretCode: c.admin_secret_code || 'ADMIN2026',
         adminName: c.admin_name || c.created_by || 'Circle Admin',
         adminPhotoUrl: c.admin_photo_url || '',
+        adminUpiId: c.admin_upi_id || '',
+        adminQrCodeUrl: c.admin_qr_code_url || '',
+        adminPhone: c.admin_phone || '',
+        adminEmail: c.admin_email || '',
       }));
       saveLocalState('circles', mapped);
       return mapped;
@@ -208,7 +212,7 @@ export async function dbUpsertCircle(circle: Circle): Promise<void> {
         currency_symbol: circle.currencySymbol || '₹',
         contribution_frequency: circle.contributionFrequency || 'weekly',
         contribution_amount: Number(circle.contributionAmount || 500),
-        contribution_day: circle.contributionDay || 'Sunday',
+        contribution_day: circle.contributionDay || 'Wednesday',
         start_date: circle.startDate || new Date().toISOString().split('T')[0],
         expected_members: Number(circle.expectedMembers || 10),
         rules: Array.isArray(circle.rules) ? circle.rules : [],
@@ -221,6 +225,10 @@ export async function dbUpsertCircle(circle: Circle): Promise<void> {
         ...basePayload,
         admin_name: circle.adminName || circle.createdBy || 'Circle Admin',
         admin_photo_url: circle.adminPhotoUrl || '',
+        admin_upi_id: circle.adminUpiId || null,
+        admin_qr_code_url: circle.adminQrCodeUrl || null,
+        admin_phone: circle.adminPhone || null,
+        admin_email: circle.adminEmail || null,
       };
 
       const { error: fullError } = await client.from('circles').upsert(fullPayload);
